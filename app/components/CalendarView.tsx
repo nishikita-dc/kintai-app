@@ -11,6 +11,7 @@ interface CalendarViewProps {
   extraWorkDays: string[];
   absentRecords: AbsentRecord[];
   onToggleDate: (dateStr: string) => void;
+  disabled?: boolean;
 }
 
 const WEEK_LABELS = ['日', '月', '火', '水', '木', '金', '土'] as const;
@@ -23,6 +24,7 @@ export default function CalendarView({
   extraWorkDays,
   absentRecords,
   onToggleDate,
+  disabled = false,
 }: CalendarViewProps) {
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDay = new Date(year, month - 1, 1).getDay();
@@ -89,8 +91,8 @@ export default function CalendarView({
     cells.push(
       <div
         key={d}
-        onClick={() => onToggleDate(dateStr)}
-        className={`h-20 border ${borderColor} ${bgColor} p-1 cursor-pointer transition hover:brightness-95 relative group overflow-hidden`}
+        onClick={() => !disabled && onToggleDate(dateStr)}
+        className={`h-20 border ${borderColor} ${bgColor} p-1 transition relative group overflow-hidden ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:brightness-95'}`}
       >
         <div className="flex justify-between items-start">
           <span

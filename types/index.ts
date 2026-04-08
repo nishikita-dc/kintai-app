@@ -33,3 +33,9 @@ export interface DoctorItem {
   id: string;
   name: string;
 }
+
+export interface KvData {
+  extraWorkDays: string[];
+  absentRecords: AbsentRecord[];
+  timeChanges: TimeChange[];
+}

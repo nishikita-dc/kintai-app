@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import type { AbsentRecord, TimeChange, PreviewRow, Summary, DoctorItem } from '@/types';
+import { useState, useEffect, useCallback } from 'react';
+import type { PreviewRow, Summary, DoctorItem } from '@/types';
 import { JAPANESE_HOLIDAYS } from '@/lib/constants';
+import { apiHeaders } from '@/lib/api';
+import { useAppStorage } from '@/app/hooks/useAppStorage';
+import { useSchedule } from '@/app/hooks/useSchedule';
+import { useKvSync, useConfigSync } from '@/app/hooks/useKvSync';
 import BasicInfoStep from '@/app/components/BasicInfoStep';
 import CalendarView from '@/app/components/CalendarView';
 import ExceptionEditor from '@/app/components/ExceptionEditor';
@@ -11,24 +15,69 @@ import DoctorSelectScreen from '@/app/components/DoctorSelectScreen';
 
 const WEEK_DAYS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 
-interface KvData {
-  extraWorkDays: string[];
-  absentRecords: AbsentRecord[];
-  timeChanges: TimeChange[];
-}
-
 export default function Home() {
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(3);
-  const [empId, setEmpId] = useState('1030');
-  const [empName, setEmpName] = useState('生野智也');
-  const [weekdayHoliday, setWeekdayHoliday] = useState(4);
-  const [enableSubstituteWork] = useState(true);
+  // ── ストレージ・ドクター管理 ──────────────────────────────────────
+  const {
+    isInitialized,
+    selectedDoctor,
+    year,
+    month,
+    weekdayHoliday,
+    setYear,
+    setMonth,
+    setWeekdayHoliday,
+    selectDoctor,
+    clearDoctor,
+  } = useAppStorage();
 
-  const [extraWorkDays, setExtraWorkDays] = useState<string[]>([]);
-  const [absentRecords, setAbsentRecords] = useState<AbsentRecord[]>([]);
-  const [timeChanges, setTimeChanges] = useState<TimeChange[]>([]);
+  // selectedDoctor から派生させた値（二重管理を排除）
+  const empId = selectedDoctor?.id ?? '';
+  const empName = selectedDoctor?.name ?? '';
 
+  // ── スケジュール管理 ──────────────────────────────────────────────
+  const {
+    holidays,
+    extraWorkDays,
+    setExtraWorkDays,
+    absentRecords,
+    setAbsentRecords,
+    timeChanges,
+    setTimeChanges,
+    toggleDateStatus,
+    resetSchedule,
+  } = useSchedule({
+    year,
+    month,
+    weekdayHoliday,
+    enableSubstituteWork: true,
+    isInitialized,
+  });
+
+  // ── ドクター個別設定の KV 同期 ─────────────────────────────────────
+  useConfigSync({
+    selectedDoctor,
+    empId,
+    weekdayHoliday,
+    isInitialized,
+    setWeekdayHoliday,
+  });
+
+  // ── KV 同期 ───────────────────────────────────────────────────────
+  const { isKvLoading, kvError, clearKvError, canAutoSaveRef } = useKvSync({
+    selectedDoctor,
+    empId,
+    year,
+    month,
+    isInitialized,
+    extraWorkDays,
+    absentRecords,
+    timeChanges,
+    setExtraWorkDays,
+    setAbsentRecords,
+    setTimeChanges,
+  });
+
+  // ── プレビュー・CSV 状態 ──────────────────────────────────────────
   const [generatedCsv, setGeneratedCsv] = useState<string | null>(null);
   const [previewData, setPreviewData] = useState<PreviewRow[]>([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -41,227 +90,80 @@ export default function Home() {
     absentSub: 0,
   });
 
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [selectedDoctor, setSelectedDoctor] = useState<DoctorItem | null>(null);
-  const [isKvLoading, setIsKvLoading] = useState(false);
+  // ── 確定フロー状態 ────────────────────────────────────────────────
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [confirmedAt, setConfirmedAt] = useState<string | null>(null);
 
-  // ユーザー操作後のみ自動保存を許可するフラグ
-  // KV ロード完了 or 自動生成が終わった後に true になる
-  const canAutoSaveRef = useRef(false);
-
-  const holidays = useMemo(
-    () => [0, weekdayHoliday].sort((a, b) => a - b),
-    [weekdayHoliday],
-  );
-
-  // ───────────────────────────────────────────────
-  // 1. localStorage から「ドクター選択」と「基本設定」を復元
-  // ───────────────────────────────────────────────
-  useEffect(() => {
-    const savedDoctor = localStorage.getItem('star_dental_selected_doctor');
-    if (savedDoctor) {
-      try {
-        const doc = JSON.parse(savedDoctor) as DoctorItem;
-        setSelectedDoctor(doc);
-        setEmpId(doc.id);
-        setEmpName(doc.name);
-      } catch (e) {
-        console.error('ドクター読み込みエラー', e);
-      }
-    }
-
-    const savedConfig = localStorage.getItem('star_dental_config_v4_0');
-    if (savedConfig) {
-      try {
-        const parsed = JSON.parse(savedConfig);
-        if (parsed.weekdayHoliday !== undefined) {
-          setWeekdayHoliday(parsed.weekdayHoliday);
-        } else if (parsed.holidays) {
-          const wd = (parsed.holidays as number[]).find((d) => d !== 0);
-          setWeekdayHoliday(wd !== undefined ? wd : 4);
-        }
-        if (parsed.year && parsed.month) {
-          setYear(parsed.year);
-          setMonth(parsed.month);
-        }
-      } catch (e) {
-        console.error('設定読み込みエラー', e);
-      }
-    }
-    setIsInitialized(true);
-  }, []);
-
-  // ───────────────────────────────────────────────
-  // 2. 基本設定（定休日・年月）を localStorage に保存
-  // ───────────────────────────────────────────────
+  // 月・定休日が変わったらプレビューをリセット
   useEffect(() => {
     if (!isInitialized) return;
-    const config = { weekdayHoliday, holidays: [0, weekdayHoliday], year, month };
-    localStorage.setItem('star_dental_config_v4_0', JSON.stringify(config));
-  }, [weekdayHoliday, year, month, isInitialized]);
-
-  // ───────────────────────────────────────────────
-  // 3. 月・定休日が変わったら例外スケジュールを自動生成
-  //    （KV ロード後に上書きされる場合がある）
-  // ───────────────────────────────────────────────
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    const prefix = `${year}-${String(month).padStart(2, '0')}`;
-    const holidaysInMonth: AbsentRecord[] = Object.entries(JAPANESE_HOLIDAYS)
-      .filter(([date]) => date.startsWith(prefix))
-      .map(([date, name]) => ({ date, type: '祝日' as const, name }));
-
-    const substituteWorkDays: string[] = [];
-    const daysInMonth = new Date(year, month, 0).getDate();
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const currentDate = new Date(year, month - 1, d);
-      const dayOfWeek = currentDate.getDay();
-      const dateDisplay = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
-      if (dayOfWeek === weekdayHoliday && !JAPANESE_HOLIDAYS[dateDisplay]) {
-        const sun = new Date(currentDate);
-        sun.setDate(currentDate.getDate() - dayOfWeek);
-
-        let hasHolidayInWeek = false;
-        for (let i = 0; i < 7; i++) {
-          const check = new Date(sun);
-          check.setDate(sun.getDate() + i);
-          const k = `${check.getFullYear()}-${String(check.getMonth() + 1).padStart(2, '0')}-${String(check.getDate()).padStart(2, '0')}`;
-          if (JAPANESE_HOLIDAYS[k]) {
-            hasHolidayInWeek = true;
-            break;
-          }
-        }
-        if (hasHolidayInWeek && enableSubstituteWork) {
-          substituteWorkDays.push(dateDisplay);
-        }
-      }
-    }
-
-    setAbsentRecords(holidaysInMonth);
-    setExtraWorkDays(substituteWorkDays);
-    setTimeChanges([]);
     setPreviewData([]);
     setShowPreview(false);
-  }, [year, month, weekdayHoliday, enableSubstituteWork, isInitialized]);
+  }, [year, month, weekdayHoliday, isInitialized]);
 
-  // ───────────────────────────────────────────────
-  // 4. ドクター選択後・月変更時に KV からデータを読み込む
-  //    自動生成データより KV データを優先する
-  // ───────────────────────────────────────────────
+  // 年月・ドクターが変わったら確定ステータスを KV から復元
   useEffect(() => {
-    if (!selectedDoctor || !isInitialized) return;
+    if (!selectedDoctor || !isInitialized || !empId) {
+      setIsConfirmed(false);
+      setConfirmedAt(null);
+      return;
+    }
 
-    canAutoSaveRef.current = false;
-    setIsKvLoading(true);
+    const controller = new AbortController();
+    setIsConfirmed(false);
+    setConfirmedAt(null);
 
-    fetch(`/api/kintai?empId=${empId}&year=${year}&month=${month}`)
+    fetch(`/api/confirm?empId=${empId}&year=${year}&month=${month}`, {
+      headers: apiHeaders(),
+      signal: controller.signal,
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<KvData | null>;
+        return res.json() as Promise<{ confirmed: boolean; confirmedAt: string; empName: string } | null>;
       })
       .then((data) => {
-        if (data) {
-          setExtraWorkDays(data.extraWorkDays ?? []);
-          setAbsentRecords(data.absentRecords ?? []);
-          setTimeChanges(data.timeChanges ?? []);
-        }
-        // data が null の場合は自動生成値をそのまま使う
-      })
-      .catch((err) => {
-        // GitHub Pages など API なし環境ではエラーを無視し自動生成値を維持
-        console.warn('KV読み込みエラー（API未接続の場合は無視してください）:', err);
-      })
-      .finally(() => {
-        setIsKvLoading(false);
-        // setState が反映されてからフラグを立てることで
-        // ロード直後の不要な自動保存を防ぐ
-        setTimeout(() => {
-          canAutoSaveRef.current = true;
-        }, 0);
-      });
-  }, [selectedDoctor, empId, year, month, isInitialized]);
-
-  // ───────────────────────────────────────────────
-  // 5. 例外データ変更時に KV へ自動保存（デバウンス 1 秒）
-  //    KV ロード中・自動生成中は保存しない
-  // ───────────────────────────────────────────────
-  useEffect(() => {
-    if (!canAutoSaveRef.current || !selectedDoctor) return;
-
-    const timer = setTimeout(() => {
-      if (!canAutoSaveRef.current || !selectedDoctor) return;
-
-      fetch('/api/kintai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          empId,
-          year,
-          month,
-          data: { extraWorkDays, absentRecords, timeChanges },
-        }),
-      }).catch((err) => {
-        console.warn('KV保存エラー:', err);
-      });
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [extraWorkDays, absentRecords, timeChanges, selectedDoctor, empId, year, month]);
-
-  // ───────────────────────────────────────────────
-  // カレンダークリックで出勤/休みを切り替える
-  // ───────────────────────────────────────────────
-  const toggleDateStatus = useCallback(
-    (dateStr: string) => {
-      const dayOfWeek = new Date(dateStr).getDay();
-      const isExtra = extraWorkDays.includes(dateStr);
-      const absentRec = absentRecords.find((r) => r.date === dateStr);
-      const isHoliday = holidays.includes(dayOfWeek);
-      const isNationalHoliday = !!JAPANESE_HOLIDAYS[dateStr];
-      const currentlyOff = !!absentRec || (!isExtra && (isHoliday || isNationalHoliday));
-
-      if (currentlyOff) {
-        if (absentRec) setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
-        if ((isHoliday || isNationalHoliday) && !isExtra) {
-          setExtraWorkDays((prev) => [...prev, dateStr].sort());
-        }
-      } else {
-        if (isExtra) {
-          setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
-        } else {
-          setAbsentRecords((prev) =>
-            [...prev, { date: dateStr, type: '有給' as const }].sort((a, b) =>
-              a.date.localeCompare(b.date),
-            ),
+        if (data?.confirmed) {
+          setIsConfirmed(true);
+          const d = new Date(data.confirmedAt);
+          setConfirmedAt(
+            d.toLocaleString('ja-JP', {
+              timeZone: 'Asia/Tokyo',
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
           );
         }
-      }
-    },
-    [extraWorkDays, absentRecords, holidays],
-  );
+      })
+      .catch((err) => {
+        if ((err as Error).name === 'AbortError') return;
+        console.warn('確定ステータス読み込みエラー:', err);
+      });
 
-  const handleDoctorSelect = useCallback((doctor: DoctorItem) => {
-    canAutoSaveRef.current = false;
-    setSelectedDoctor(doctor);
-    setEmpId(doctor.id);
-    setEmpName(doctor.name);
-    localStorage.setItem('star_dental_selected_doctor', JSON.stringify(doctor));
-  }, []);
+    return () => controller.abort();
+  }, [selectedDoctor, empId, year, month, isInitialized]);
+
+  // ── ドクター操作 ──────────────────────────────────────────────────
+  const handleDoctorSelect = useCallback(
+    (doctor: DoctorItem) => {
+      canAutoSaveRef.current = false;
+      selectDoctor(doctor);
+    },
+    [selectDoctor, canAutoSaveRef],
+  );
 
   const handleDoctorChange = useCallback(() => {
     canAutoSaveRef.current = false;
-    setSelectedDoctor(null);
-    localStorage.removeItem('star_dental_selected_doctor');
-    setExtraWorkDays([]);
-    setAbsentRecords([]);
-    setTimeChanges([]);
+    clearDoctor();
+    resetSchedule();
     setPreviewData([]);
     setShowPreview(false);
-  }, []);
+  }, [clearDoctor, resetSchedule, canAutoSaveRef]);
 
+  // ── データ生成 ────────────────────────────────────────────────────
   const generateData = useCallback(() => {
     const previewRows: PreviewRow[] = [];
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -370,10 +272,10 @@ export default function Home() {
     if (showPreview) generateData();
   }, [generateData, showPreview]);
 
+  // ── CSV ダウンロード ──────────────────────────────────────────────
   const downloadCsv = async () => {
     if (!generatedCsv) return;
     const { default: Encoding } = await import('encoding-japanese');
-
     const unicodeList: number[] = Array.from({ length: generatedCsv.length }, (_, i) =>
       generatedCsv.charCodeAt(i),
     );
@@ -387,7 +289,55 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-  // localStorage 読み込み中
+  // ── 確定・取消 ────────────────────────────────────────────────────
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  const handleConfirm = useCallback(async () => {
+    setShowConfirmDialog(false);
+    setIsConfirming(true);
+    try {
+      const res = await fetch('/api/confirm', {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ empId, empName, year, month, csv: generatedCsv ?? '' }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = (await res.json()) as { ok: boolean; confirmedAt: string };
+      const d = new Date(result.confirmedAt);
+      setIsConfirmed(true);
+      setConfirmedAt(
+        d.toLocaleString('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      );
+    } catch (err) {
+      console.error('確定エラー:', err);
+      alert('確定処理に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsConfirming(false);
+    }
+  }, [empId, empName, year, month, generatedCsv]);
+
+  const handleCancelConfirm = useCallback(async () => {
+    try {
+      await fetch('/api/confirm', {
+        method: 'DELETE',
+        headers: apiHeaders(),
+        body: JSON.stringify({ empId, year, month }),
+      });
+      setIsConfirmed(false);
+      setConfirmedAt(null);
+    } catch (err) {
+      console.error('確定取消エラー:', err);
+    }
+  }, [empId, year, month]);
+
+  // ── ローディング・未選択ガード ────────────────────────────────────
   if (!isInitialized) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -399,11 +349,11 @@ export default function Home() {
     );
   }
 
-  // ドクター未選択時は選択画面を表示
   if (!selectedDoctor) {
     return <DoctorSelectScreen onSelect={handleDoctorSelect} />;
   }
 
+  // ── メイン UI ──────────────────────────────────────────────────────
   return (
     <div className="min-h-screen pb-20">
       <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
@@ -416,7 +366,7 @@ export default function Home() {
               <h1 className="text-lg font-bold text-slate-800 leading-tight">
                 勤怠管理アプリ{' '}
                 <span className="text-brand-500 text-xs bg-brand-50 px-1 rounded border border-brand-200 ml-1">
-                  Ver 4.0
+                  Ver 5.0
                 </span>
               </h1>
               <p className="text-xs text-slate-500">スター歯科クリニック 西宮北口駅前院</p>
@@ -442,6 +392,23 @@ export default function Home() {
       </header>
 
       <main className="max-w-3xl mx-auto p-4 space-y-6 mt-4">
+        {/* KV エラーバナー */}
+        {kvError && (
+          <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-sm text-red-700">
+              <i className="fa-solid fa-circle-exclamation mr-2" />
+              {kvError}
+            </span>
+            <button
+              onClick={clearKvError}
+              className="text-red-400 hover:text-red-600 transition flex-shrink-0"
+              aria-label="エラーを閉じる"
+            >
+              <i className="fa-solid fa-xmark" />
+            </button>
+          </div>
+        )}
+
         <BasicInfoStep
           year={year}
           month={month}
@@ -473,6 +440,15 @@ export default function Home() {
               </div>
             )}
 
+            {isConfirmed && (
+              <div className="mb-4 bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center gap-2">
+                <i className="fa-solid fa-lock text-green-500" />
+                <span className="text-sm text-green-700 font-bold">
+                  確定済みのため編集できません。編集するには確定を取り消してください。
+                </span>
+              </div>
+            )}
+
             <CalendarView
               year={year}
               month={month}
@@ -481,6 +457,7 @@ export default function Home() {
               extraWorkDays={extraWorkDays}
               absentRecords={absentRecords}
               onToggleDate={toggleDateStatus}
+              disabled={isConfirmed}
             />
 
             <ExceptionEditor
@@ -490,6 +467,7 @@ export default function Home() {
               setExtraWorkDays={setExtraWorkDays}
               setAbsentRecords={setAbsentRecords}
               setTimeChanges={setTimeChanges}
+              disabled={isConfirmed}
             />
           </div>
         </div>
@@ -516,6 +494,11 @@ export default function Home() {
             empId={empId}
             empName={empName}
             onDownload={downloadCsv}
+            onConfirm={() => setShowConfirmDialog(true)}
+            isConfirming={isConfirming}
+            isConfirmed={isConfirmed}
+            confirmedAt={confirmedAt ?? undefined}
+            onCancelConfirm={handleCancelConfirm}
           />
         )}
       </main>
@@ -523,6 +506,42 @@ export default function Home() {
       <footer className="text-center p-6 text-slate-400 text-xs">
         &copy; 2026 Star Dental Clinic System.
       </footer>
+
+      {/* 確定確認ダイアログ */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center border-4 border-brand-100">
+                <i className="fa-solid fa-paper-plane text-brand-500 text-xl" />
+              </div>
+            </div>
+            <h3 className="font-bold text-slate-800 text-center text-lg mb-2">
+              勤怠データを確定しますか？
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-5">
+              {year}年{month}月の勤怠データを確定します。<br />
+              月末に山本さんへ自動送信されます。<br />
+              よろしいですか？
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 border border-slate-200 text-slate-600 rounded-xl py-3 font-bold text-sm hover:bg-slate-50 transition"
+              >
+                戻る
+              </button>
+              <button
+                onClick={handleConfirm}
+                className="flex-1 bg-brand-500 hover:bg-brand-600 text-white rounded-xl py-3 font-bold text-sm shadow-md transition flex items-center justify-center gap-1.5"
+              >
+                <i className="fa-solid fa-check" />
+                確定する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,3 +8,19 @@ pages_build_output_dir = "out"
 binding = "KINTAI_DATA"
 id = "c83ff556009a48a0aa5d291100f2cab2"
 preview_id = "ca8e9297b16a41398e463043975fcb2d"
+
+# ── セキュリティ設定 ──
+# API_KEY: wrangler secret put API_KEY で設定してください
+# ALLOWED_ORIGINS: Cloudflare Pages の Settings > Environment Variables で設定
+#   例: "https://kintai-app.pages.dev,https://custom-domain.com"
+
+# ── メール送信設定（SendGrid） ──
+# SENDGRID_API_KEY: wrangler secret put SENDGRID_API_KEY で設定してください
+#   SendGrid (https://sendgrid.com) で取得した API キー
+# SENDER_EMAIL: SendGrid の Single Sender Verification で認証済みのメールアドレス
+# NOTIFY_EMAIL: 勤怠データの送信先（山本さん）
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:3001"
+NOTIFY_EMAIL = "stardc666@gmail.com"
+SENDER_EMAIL = "stardc.nishikita@gmail.com"

@@ -1,0 +1,68 @@
+name: 月末勤怠データ自動送信
+
+on:
+  schedule:
+    # 毎月28〜31日 11:00 UTC（= 20:00 JST）に実行
+    # 月末日以外はジョブ内で自動スキップ
+    - cron: '0 11 28-31 * *'
+  workflow_dispatch:
+    inputs:
+      year:
+        description: '対象年（例: 2026）'
+        required: false
+      month:
+        description: '対象月（例: 4）'
+        required: false
+
+jobs:
+  send-monthly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 月末日チェック
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            today=$(date -u +%d)
+            # 翌日の日付が1日なら今日が月末
+            tomorrow=$(date -u -d "+1 day" +%d)
+            if [ "$tomorrow" != "01" ]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "今日は月末日ではないためスキップ (${today}日)"
+              exit 0
+            fi
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: 勤怠データ送信
+        if: steps.check.outputs.skip != 'true'
+        env:
+          KINTAI_API_URL: ${{ secrets.KINTAI_API_URL }}
+          KINTAI_API_KEY: ${{ secrets.KINTAI_API_KEY }}
+        run: |
+          BODY='{}'
+          if [ -n "${{ github.event.inputs.year }}" ] && [ -n "${{ github.event.inputs.month }}" ]; then
+            BODY="{\"year\":${{ github.event.inputs.year }},\"month\":${{ github.event.inputs.month }}}"
+          fi
+
+          echo "送信先: ${KINTAI_API_URL}/api/send-monthly"
+          echo "リクエストボディ: ${BODY}"
+
+          response=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "X-API-Key: ${KINTAI_API_KEY}" \
+            -d "${BODY}" \
+            "${KINTAI_API_URL}/api/send-monthly")
+
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: ${http_code}"
+          echo "Response: ${body}"
+
+          if [ "$http_code" -ge 400 ]; then
+            echo "::error::送信に失敗しました (HTTP ${http_code}): ${body}"
+            exit 1
+          fi
+
+          echo "送信完了"

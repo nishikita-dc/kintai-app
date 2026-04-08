@@ -10,6 +10,7 @@ interface ExceptionEditorProps {
   setExtraWorkDays: React.Dispatch<React.SetStateAction<string[]>>;
   setAbsentRecords: React.Dispatch<React.SetStateAction<AbsentRecord[]>>;
   setTimeChanges: React.Dispatch<React.SetStateAction<TimeChange[]>>;
+  disabled?: boolean;
 }
 
 const ABSENT_TYPES = ['有給', '欠勤', '振替休日'] as const;
@@ -26,6 +27,7 @@ export default function ExceptionEditor({
   setExtraWorkDays,
   setAbsentRecords,
   setTimeChanges,
+  disabled = false,
 }: ExceptionEditorProps) {
   const [tempExtraDate, setTempExtraDate] = useState('');
   const [tempAbsentDate, setTempAbsentDate] = useState('');
@@ -64,7 +66,7 @@ export default function ExceptionEditor({
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-8">
+    <div className={`grid md:grid-cols-2 gap-8 ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
       {/* 左カラム：お休み・休日出勤 */}
       <div className="space-y-6">
         {/* お休み登録 */}

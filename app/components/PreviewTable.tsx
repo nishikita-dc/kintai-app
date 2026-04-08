@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { PreviewRow, Summary } from '@/types';
 
 interface PreviewTableProps {
@@ -11,6 +12,12 @@ interface PreviewTableProps {
   empId: string;
   empName: string;
   onDownload: () => void;
+  // 確定フロー
+  onConfirm?: () => void;
+  isConfirming?: boolean;
+  isConfirmed?: boolean;
+  confirmedAt?: string;
+  onCancelConfirm?: () => void;
 }
 
 function typeClass(row: PreviewRow): string {
@@ -33,9 +40,16 @@ export default function PreviewTable({
   empId,
   empName,
   onDownload,
+  onConfirm,
+  isConfirming = false,
+  isConfirmed = false,
+  confirmedAt,
+  onCancelConfirm,
 }: PreviewTableProps) {
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
   return (
-    <div className="mt-8 bg-white p-6 rounded-xl shadow-lg border border-brand-100 animation-fade-in">
+    <div className="mt-8 bg-white p-6 rounded-xl shadow-lg border border-brand-100 animation-fade-in relative">
       <h3 className="font-bold text-slate-700 mb-4 flex justify-between items-center border-b pb-3">
         <span className="flex items-center gap-2">
           <i className="fa-solid fa-table-list text-brand-500" />
@@ -136,24 +150,128 @@ export default function PreviewTable({
         </div>
       </div>
 
-      {/* ダウンロード */}
-      <div className="bg-brand-50 p-5 rounded-xl text-center border border-brand-100">
-        <p className="text-sm text-brand-800 mb-4 font-bold">
-          内容を確認して問題なければダウンロードしてください
-        </p>
-        <button
-          onClick={onDownload}
-          disabled={!generatedCsv}
-          className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-center gap-2 mx-auto"
-        >
-          <i className="fa-solid fa-file-csv" />
-          CSVファイルを保存する
-        </button>
-        <p className="text-xs text-brand-400 mt-3 font-mono">
-          ファイル名: {year}
-          {String(month).padStart(2, '0')}_{empId}_{empName}.csv
-        </p>
+      {/* アクションエリア */}
+      <div className="rounded-xl border border-brand-100 overflow-hidden">
+        <div className="bg-brand-50 px-5 pt-5 pb-4 space-y-3">
+          <p className="text-sm text-brand-800 font-bold text-center">
+            内容を確認して問題なければ操作してください
+          </p>
+
+          {/* ── 主アクション：確定して送信予約 ── */}
+          {isConfirmed ? (
+            /* 確定済みバナー */
+            <div className="bg-green-500 rounded-xl px-5 py-4 flex items-start gap-3">
+              <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i className="fa-solid fa-circle-check text-white text-lg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-white text-sm">
+                  {year}年{month}月分を確定しました
+                </p>
+                {confirmedAt && (
+                  <p className="text-xs text-green-100 mt-0.5">確定日時: {confirmedAt}</p>
+                )}
+                <p className="text-xs text-green-100 mt-0.5">
+                  月末に山本さんへ自動送信されます
+                </p>
+                {onCancelConfirm && (
+                  <button
+                    onClick={() => setShowCancelDialog(true)}
+                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold border border-white/50 text-white bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 transition"
+                  >
+                    <i className="fa-solid fa-rotate-left" />
+                    確定を取り消して再編集する
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* 確定ボタン */
+            <button
+              onClick={onConfirm}
+              disabled={!generatedCsv || isConfirming}
+              className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 text-base"
+            >
+              {isConfirming ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin" />
+                  送信予約中...
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-paper-plane" />
+                  確定して送信予約する
+                </>
+              )}
+            </button>
+          )}
+
+          {/* 自動送信の案内（確定前のみ表示） */}
+          {!isConfirmed && (
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-xl px-4 py-3 flex items-start gap-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center mt-0.5">
+                <i className="fa-solid fa-triangle-exclamation text-amber-600 text-sm" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-800">月末に自動送信されます</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  確定すると月末 20:00 に山本さんへCSVが自動送信されます。確定後も取り消して再編集できます。
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── 副アクション：CSVダウンロード ── */}
+        <div className="bg-white px-5 py-3 border-t border-brand-100 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate-400 font-mono truncate min-w-0">
+            {year}{String(month).padStart(2, '0')}_{empId}_{empName}.csv
+          </p>
+          <button
+            onClick={onDownload}
+            disabled={!generatedCsv}
+            className="flex-shrink-0 text-sm border border-slate-300 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2"
+          >
+            <i className="fa-solid fa-file-csv text-green-600" />
+            CSVを保存
+          </button>
+        </div>
       </div>
+
+      {/* 確定取り消し確認ダイアログ */}
+      {showCancelDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center border-4 border-orange-100">
+                <i className="fa-solid fa-rotate-left text-orange-500 text-xl" />
+              </div>
+            </div>
+            <h3 className="font-bold text-slate-800 text-center text-lg mb-2">
+              確定を取り消しますか？
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-5">
+              月末の自動送信予約がキャンセルされます。<br />
+              再度確定することで再予約できます。
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelDialog(false)}
+                className="flex-1 border border-slate-200 text-slate-600 rounded-xl py-3 font-bold text-sm hover:bg-slate-50 transition"
+              >
+                戻る
+              </button>
+              <button
+                onClick={() => { setShowCancelDialog(false); onCancelConfirm?.(); }}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 font-bold text-sm shadow-md transition flex items-center justify-center gap-1.5"
+              >
+                <i className="fa-solid fa-rotate-left" />
+                取り消す
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
