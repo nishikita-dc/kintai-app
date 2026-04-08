@@ -54,4 +54,10 @@ export const DOCTOR_LIST: DoctorItem[] = [
   { id: '1063', name: '山本' },
   { id: '1040', name: '岡田' },
   { id: '1047', name: '珠央' },
+  { id: '1084', name: '末松' },
+  { id: '1085', name: '水田' },
+  { id: '1086', name: '有馬' },
+  { id: '1087', name: '辰己' },
+  { id: '1088', name: '楠元' },
+  { id: '1089', name: '桑迫' },
 ];
