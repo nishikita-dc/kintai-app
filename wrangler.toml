@@ -1,0 +1,10 @@
+name = "kintai-app"
+compatibility_date = "2024-09-23"
+
+# Cloudflare Pages のビルド出力ディレクトリ（next build の静的エクスポート先）
+pages_build_output_dir = "out"
+
+[[kv_namespaces]]
+binding = "KINTAI_DATA"
+id = "c83ff556009a48a0aa5d291100f2cab2"
+preview_id = "ca8e9297b16a41398e463043975fcb2d"

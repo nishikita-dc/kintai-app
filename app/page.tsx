@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { AbsentRecord, TimeChange, PreviewRow, Summary, DoctorItem } from '@/types';
 import { JAPANESE_HOLIDAYS } from '@/lib/constants';
 import BasicInfoStep from '@/app/components/BasicInfoStep';
@@ -10,6 +10,12 @@ import PreviewTable from '@/app/components/PreviewTable';
 import DoctorSelectScreen from '@/app/components/DoctorSelectScreen';
 
 const WEEK_DAYS = ['日', '月', '火', '水', '木', '金', '土'] as const;
+
+interface KvData {
+  extraWorkDays: string[];
+  absentRecords: AbsentRecord[];
+  timeChanges: TimeChange[];
+}
 
 export default function Home() {
   const [year, setYear] = useState(2026);
@@ -37,15 +43,21 @@ export default function Home() {
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorItem | null>(null);
+  const [isKvLoading, setIsKvLoading] = useState(false);
+
+  // ユーザー操作後のみ自動保存を許可するフラグ
+  // KV ロード完了 or 自動生成が終わった後に true になる
+  const canAutoSaveRef = useRef(false);
 
   const holidays = useMemo(
     () => [0, weekdayHoliday].sort((a, b) => a - b),
     [weekdayHoliday],
   );
 
-  // ローカルストレージから設定を読み込む
+  // ───────────────────────────────────────────────
+  // 1. localStorage から「ドクター選択」と「基本設定」を復元
+  // ───────────────────────────────────────────────
   useEffect(() => {
-    // 選択済みドクターを復元
     const savedDoctor = localStorage.getItem('star_dental_selected_doctor');
     if (savedDoctor) {
       try {
@@ -79,14 +91,19 @@ export default function Home() {
     setIsInitialized(true);
   }, []);
 
-  // 設定変更時にローカルストレージへ保存
+  // ───────────────────────────────────────────────
+  // 2. 基本設定（定休日・年月）を localStorage に保存
+  // ───────────────────────────────────────────────
   useEffect(() => {
     if (!isInitialized) return;
     const config = { weekdayHoliday, holidays: [0, weekdayHoliday], year, month };
     localStorage.setItem('star_dental_config_v4_0', JSON.stringify(config));
   }, [weekdayHoliday, year, month, isInitialized]);
 
-  // 月・定休日変更時にスケジュールを自動生成
+  // ───────────────────────────────────────────────
+  // 3. 月・定休日が変わったら例外スケジュールを自動生成
+  //    （KV ロード後に上書きされる場合がある）
+  // ───────────────────────────────────────────────
   useEffect(() => {
     if (!isInitialized) return;
 
@@ -130,6 +147,73 @@ export default function Home() {
     setShowPreview(false);
   }, [year, month, weekdayHoliday, enableSubstituteWork, isInitialized]);
 
+  // ───────────────────────────────────────────────
+  // 4. ドクター選択後・月変更時に KV からデータを読み込む
+  //    自動生成データより KV データを優先する
+  // ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedDoctor || !isInitialized) return;
+
+    canAutoSaveRef.current = false;
+    setIsKvLoading(true);
+
+    fetch(`/api/kintai?empId=${empId}&year=${year}&month=${month}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json() as Promise<KvData | null>;
+      })
+      .then((data) => {
+        if (data) {
+          setExtraWorkDays(data.extraWorkDays ?? []);
+          setAbsentRecords(data.absentRecords ?? []);
+          setTimeChanges(data.timeChanges ?? []);
+        }
+        // data が null の場合は自動生成値をそのまま使う
+      })
+      .catch((err) => {
+        // GitHub Pages など API なし環境ではエラーを無視し自動生成値を維持
+        console.warn('KV読み込みエラー（API未接続の場合は無視してください）:', err);
+      })
+      .finally(() => {
+        setIsKvLoading(false);
+        // setState が反映されてからフラグを立てることで
+        // ロード直後の不要な自動保存を防ぐ
+        setTimeout(() => {
+          canAutoSaveRef.current = true;
+        }, 0);
+      });
+  }, [selectedDoctor, empId, year, month, isInitialized]);
+
+  // ───────────────────────────────────────────────
+  // 5. 例外データ変更時に KV へ自動保存（デバウンス 1 秒）
+  //    KV ロード中・自動生成中は保存しない
+  // ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!canAutoSaveRef.current || !selectedDoctor) return;
+
+    const timer = setTimeout(() => {
+      if (!canAutoSaveRef.current || !selectedDoctor) return;
+
+      fetch('/api/kintai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empId,
+          year,
+          month,
+          data: { extraWorkDays, absentRecords, timeChanges },
+        }),
+      }).catch((err) => {
+        console.warn('KV保存エラー:', err);
+      });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [extraWorkDays, absentRecords, timeChanges, selectedDoctor, empId, year, month]);
+
+  // ───────────────────────────────────────────────
+  // カレンダークリックで出勤/休みを切り替える
+  // ───────────────────────────────────────────────
   const toggleDateStatus = useCallback(
     (dateStr: string) => {
       const dayOfWeek = new Date(dateStr).getDay();
@@ -160,6 +244,7 @@ export default function Home() {
   );
 
   const handleDoctorSelect = useCallback((doctor: DoctorItem) => {
+    canAutoSaveRef.current = false;
     setSelectedDoctor(doctor);
     setEmpId(doctor.id);
     setEmpName(doctor.name);
@@ -167,6 +252,7 @@ export default function Home() {
   }, []);
 
   const handleDoctorChange = useCallback(() => {
+    canAutoSaveRef.current = false;
     setSelectedDoctor(null);
     localStorage.removeItem('star_dental_selected_doctor');
     setExtraWorkDays([]);
@@ -301,7 +387,7 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-  // localStorage確認中はローディング表示
+  // localStorage 読み込み中
   if (!isInitialized) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -378,24 +464,34 @@ export default function Home() {
             カレンダーをクリックすると「出勤/休み」を切り替えられます。自動入力された祝日や振替出勤もここで変更できます。
           </p>
 
-          <CalendarView
-            year={year}
-            month={month}
-            holidays={holidays}
-            weekdayHoliday={weekdayHoliday}
-            extraWorkDays={extraWorkDays}
-            absentRecords={absentRecords}
-            onToggleDate={toggleDateStatus}
-          />
+          {/* KV 読み込み中オーバーレイ */}
+          <div className="relative">
+            {isKvLoading && (
+              <div className="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center rounded-lg gap-2">
+                <i className="fa-solid fa-spinner fa-spin text-brand-500 text-2xl" />
+                <p className="text-sm text-slate-500 font-medium">データを読み込み中...</p>
+              </div>
+            )}
 
-          <ExceptionEditor
-            extraWorkDays={extraWorkDays}
-            absentRecords={absentRecords}
-            timeChanges={timeChanges}
-            setExtraWorkDays={setExtraWorkDays}
-            setAbsentRecords={setAbsentRecords}
-            setTimeChanges={setTimeChanges}
-          />
+            <CalendarView
+              year={year}
+              month={month}
+              holidays={holidays}
+              weekdayHoliday={weekdayHoliday}
+              extraWorkDays={extraWorkDays}
+              absentRecords={absentRecords}
+              onToggleDate={toggleDateStatus}
+            />
+
+            <ExceptionEditor
+              extraWorkDays={extraWorkDays}
+              absentRecords={absentRecords}
+              timeChanges={timeChanges}
+              setExtraWorkDays={setExtraWorkDays}
+              setAbsentRecords={setAbsentRecords}
+              setTimeChanges={setTimeChanges}
+            />
+          </div>
         </div>
 
         <div className="flex justify-center pt-2">
