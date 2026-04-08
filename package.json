@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "deploy": "npm run build && wrangler pages deploy out --project-name kintai-app --commit-message \"deploy\"",
+    "pages:dev": "wrangler pages dev out --port 3001"
   },
   "dependencies": {
     "encoding-japanese": "^2.2.0",
