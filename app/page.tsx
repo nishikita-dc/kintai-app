@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { AbsentRecord, TimeChange, PreviewRow, Summary } from '@/types';
+import type { AbsentRecord, TimeChange, PreviewRow, Summary, DoctorItem } from '@/types';
 import { JAPANESE_HOLIDAYS } from '@/lib/constants';
 import BasicInfoStep from '@/app/components/BasicInfoStep';
 import CalendarView from '@/app/components/CalendarView';
 import ExceptionEditor from '@/app/components/ExceptionEditor';
 import PreviewTable from '@/app/components/PreviewTable';
+import DoctorSelectScreen from '@/app/components/DoctorSelectScreen';
 
 const WEEK_DAYS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 
@@ -35,6 +36,7 @@ export default function Home() {
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState<DoctorItem | null>(null);
 
   const holidays = useMemo(
     () => [0, weekdayHoliday].sort((a, b) => a - b),
@@ -43,12 +45,23 @@ export default function Home() {
 
   // ローカルストレージから設定を読み込む
   useEffect(() => {
+    // 選択済みドクターを復元
+    const savedDoctor = localStorage.getItem('star_dental_selected_doctor');
+    if (savedDoctor) {
+      try {
+        const doc = JSON.parse(savedDoctor) as DoctorItem;
+        setSelectedDoctor(doc);
+        setEmpId(doc.id);
+        setEmpName(doc.name);
+      } catch (e) {
+        console.error('ドクター読み込みエラー', e);
+      }
+    }
+
     const savedConfig = localStorage.getItem('star_dental_config_v4_0');
     if (savedConfig) {
       try {
         const parsed = JSON.parse(savedConfig);
-        setEmpId(parsed.empId || '1030');
-        setEmpName(parsed.empName || '生野智也');
         if (parsed.weekdayHoliday !== undefined) {
           setWeekdayHoliday(parsed.weekdayHoliday);
         } else if (parsed.holidays) {
@@ -69,9 +82,9 @@ export default function Home() {
   // 設定変更時にローカルストレージへ保存
   useEffect(() => {
     if (!isInitialized) return;
-    const config = { empId, empName, weekdayHoliday, holidays: [0, weekdayHoliday], year, month };
+    const config = { weekdayHoliday, holidays: [0, weekdayHoliday], year, month };
     localStorage.setItem('star_dental_config_v4_0', JSON.stringify(config));
-  }, [empId, empName, weekdayHoliday, year, month, isInitialized]);
+  }, [weekdayHoliday, year, month, isInitialized]);
 
   // 月・定休日変更時にスケジュールを自動生成
   useEffect(() => {
@@ -145,6 +158,23 @@ export default function Home() {
     },
     [extraWorkDays, absentRecords, holidays],
   );
+
+  const handleDoctorSelect = useCallback((doctor: DoctorItem) => {
+    setSelectedDoctor(doctor);
+    setEmpId(doctor.id);
+    setEmpName(doctor.name);
+    localStorage.setItem('star_dental_selected_doctor', JSON.stringify(doctor));
+  }, []);
+
+  const handleDoctorChange = useCallback(() => {
+    setSelectedDoctor(null);
+    localStorage.removeItem('star_dental_selected_doctor');
+    setExtraWorkDays([]);
+    setAbsentRecords([]);
+    setTimeChanges([]);
+    setPreviewData([]);
+    setShowPreview(false);
+  }, []);
 
   const generateData = useCallback(() => {
     const previewRows: PreviewRow[] = [];
@@ -271,6 +301,23 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  // localStorage確認中はローディング表示
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-slate-400 text-sm">
+          <i className="fa-solid fa-spinner fa-spin mr-2" />
+          読み込み中...
+        </div>
+      </div>
+    );
+  }
+
+  // ドクター未選択時は選択画面を表示
+  if (!selectedDoctor) {
+    return <DoctorSelectScreen onSelect={handleDoctorSelect} />;
+  }
+
   return (
     <div className="min-h-screen pb-20">
       <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
@@ -289,11 +336,21 @@ export default function Home() {
               <p className="text-xs text-slate-500">スター歯科クリニック 西宮北口駅前院</p>
             </div>
           </div>
-          <div className="text-right hidden sm:block">
-            <p className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">
-              <i className="fa-solid fa-save mr-1" />
-              Settings Auto-Saved
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm font-bold text-slate-700">
+                <i className="fa-solid fa-user-doctor mr-1 text-brand-500" />
+                {empName}先生
+              </p>
+              <p className="text-xs text-slate-400 font-mono">ID: {empId}</p>
+            </div>
+            <button
+              onClick={handleDoctorChange}
+              className="text-xs bg-slate-100 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 font-bold"
+            >
+              <i className="fa-solid fa-arrows-rotate" />
+              ドクター変更
+            </button>
           </div>
         </div>
       </header>
@@ -302,13 +359,9 @@ export default function Home() {
         <BasicInfoStep
           year={year}
           month={month}
-          empId={empId}
-          empName={empName}
           weekdayHoliday={weekdayHoliday}
           onYearChange={setYear}
           onMonthChange={setMonth}
-          onEmpIdChange={setEmpId}
-          onEmpNameChange={setEmpName}
           onWeekdayHolidayChange={setWeekdayHoliday}
         />
 

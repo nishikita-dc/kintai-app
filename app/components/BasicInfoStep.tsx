@@ -1,17 +1,13 @@
 'use client';
 
-import { DOCTOR_LIST, JAPANESE_HOLIDAYS } from '@/lib/constants';
+import { JAPANESE_HOLIDAYS } from '@/lib/constants';
 
 interface BasicInfoStepProps {
   year: number;
   month: number;
-  empId: string;
-  empName: string;
   weekdayHoliday: number;
   onYearChange: (v: number) => void;
   onMonthChange: (v: number) => void;
-  onEmpIdChange: (v: string) => void;
-  onEmpNameChange: (v: string) => void;
   onWeekdayHolidayChange: (v: number) => void;
 }
 
@@ -20,13 +16,9 @@ const DAY_NAMES = ['月', '火', '水', '木', '金', '土'] as const;
 export default function BasicInfoStep({
   year,
   month,
-  empId,
-  empName,
   weekdayHoliday,
   onYearChange,
   onMonthChange,
-  onEmpIdChange,
-  onEmpNameChange,
   onWeekdayHolidayChange,
 }: BasicInfoStepProps) {
   const allHolidaysList = Object.entries(JAPANESE_HOLIDAYS)
@@ -44,81 +36,25 @@ export default function BasicInfoStep({
         基本情報設定
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* 年月 */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1">対象年</label>
-            <input
-              type="number"
-              value={year}
-              onChange={(e) => onYearChange(Number(e.target.value))}
-              className="w-full rounded-lg border-slate-300 focus:border-brand-500 focus:ring-brand-500 shadow-sm p-2.5 bg-slate-50 border font-bold text-center"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1">対象月</label>
-            <input
-              type="number"
-              value={month}
-              onChange={(e) => onMonthChange(Number(e.target.value))}
-              className="w-full rounded-lg border-slate-300 focus:border-brand-500 focus:ring-brand-500 shadow-sm p-2.5 bg-slate-50 border font-bold text-center"
-            />
-          </div>
-        </div>
-
-        {/* 従業員 */}
+      {/* 年月選択 */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
         <div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1">従業員ID</label>
-              <input
-                type="text"
-                value={empId}
-                onChange={(e) => onEmpIdChange(e.target.value)}
-                className="w-full rounded-lg border-slate-300 focus:border-brand-500 focus:ring-brand-500 shadow-sm p-2.5 border"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1">氏名</label>
-              <input
-                type="text"
-                value={empName}
-                onChange={(e) => onEmpNameChange(e.target.value)}
-                className="w-full rounded-lg border-slate-300 focus:border-brand-500 focus:ring-brand-500 shadow-sm p-2.5 border"
-              />
-            </div>
-          </div>
-
-          {/* ドクター参照リスト */}
-          <div className="mt-3">
-            <details className="bg-slate-50 rounded-lg border border-slate-200 text-sm group">
-              <summary className="px-3 py-2 text-xs font-bold text-slate-500 cursor-pointer hover:bg-slate-100 transition list-none flex justify-between items-center select-none">
-                <span>
-                  <i className="fa-solid fa-list-ul mr-2 text-brand-500" />
-                  ドクターID参照リスト（クリックで自動入力）
-                </span>
-                <i className="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform" />
-              </summary>
-              <div className="p-3 pt-0 grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                {DOCTOR_LIST.map((doc) => (
-                  <button
-                    key={doc.id}
-                    onClick={() => {
-                      onEmpIdChange(doc.id);
-                      onEmpNameChange(doc.name);
-                    }}
-                    className="text-xs text-left px-2 py-1.5 rounded border border-slate-200 bg-white hover:bg-brand-50 hover:border-brand-200 hover:text-brand-600 transition flex justify-between items-center group/btn shadow-sm"
-                  >
-                    <span className="font-mono text-slate-400 group-hover/btn:text-brand-400">
-                      {doc.id}
-                    </span>
-                    <span className="font-bold">{doc.name}</span>
-                  </button>
-                ))}
-              </div>
-            </details>
-          </div>
+          <label className="block text-xs font-bold text-slate-500 mb-1">対象年</label>
+          <input
+            type="number"
+            value={year}
+            onChange={(e) => onYearChange(Number(e.target.value))}
+            className="w-full rounded-lg border-slate-300 focus:border-brand-500 focus:ring-brand-500 shadow-sm p-2.5 bg-slate-50 border font-bold text-center"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-500 mb-1">対象月</label>
+          <input
+            type="number"
+            value={month}
+            onChange={(e) => onMonthChange(Number(e.target.value))}
+            className="w-full rounded-lg border-slate-300 focus:border-brand-500 focus:ring-brand-500 shadow-sm p-2.5 bg-slate-50 border font-bold text-center"
+          />
         </div>
       </div>
 
