@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'スター歯科クリニック 勤怠管理アプリ Ver 4.0',
+  title: 'スター歯科クリニック 勤怠管理アプリ',
   description: '勤怠打刻データ作成ツール',
 };
 
