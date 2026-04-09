@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow">
+  <meta property="og:title" content="勤怠管理アプリ 使い方ガイド">
+  <meta property="og:description" content="ドクター向け勤怠管理アプリの操作手順とトラブルシューティング">
+  <meta property="og:type" content="article">
+  <title>勤怠管理アプリ 使い方ガイド</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FFFFFF'/><rect x='8' y='8' width='84' height='84' rx='14' fill='none' stroke='%233B82F6' stroke-width='4'/><circle cx='32' cy='40' r='10' fill='%233B82F6' opacity='0.8'/><circle cx='68' cy='40' r='10' fill='%2360A5FA' opacity='0.8'/><rect x='25' y='62' width='50' height='6' rx='3' fill='%2394A3B8' opacity='0.6'/><rect x='30' y='74' width='40' height='6' rx='3' fill='%2394A3B8' opacity='0.3'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ads: {
+              bg: '#FFFFFF',
+              surface: '#F8FAFC',
+              hover: '#F1F5F9',
+              border: '#E2E8F0',
+              accent: '#3B82F6',
+              'accent-light': '#2563EB',
+              text: '#1E293B',
+              muted: '#64748B',
+              dim: '#94A3B8',
+              positive: '#10B981',
+              negative: '#EF4444',
+              warning: '#F59E0B',
+            }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans JP"', '"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', '"Yu Gothic UI"', '"Meiryo"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { border-top: none !important; }
+      .rounded-xl { break-inside: avoid; }
+      .md\:flex-row { flex-direction: row !important; }
+      .md\:hidden { display: none !important; }
+      .hidden.md\:block { display: block !important; }
+      .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+      .md\:mb-20 { margin-bottom: 5rem !important; }
+      .md\:py-16 { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+      .bg-clip-text.text-transparent {
+        -webkit-background-clip: initial !important;
+        background-clip: initial !important;
+        color: #2563EB !important;
+        -webkit-text-fill-color: #2563EB !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-ads-bg text-slate-600 antialiased leading-relaxed border-t-4 border-ads-accent">
+  <div class="no-print max-w-3xl mx-auto px-5 pt-2 flex justify-end">
+    <button onclick="window.print()" class="flex items-center gap-1.5 text-xs text-ads-dim hover:text-ads-accent transition-colors cursor-pointer">
+      <i data-lucide="download" class="w-3.5 h-3.5"></i>
+      PDF
+    </button>
+  </div>
+  <main class="max-w-3xl mx-auto px-5 py-10 md:py-16">
+<!-- CONTENT_START -->
+
+<!-- ============================================================ -->
+<!--  HERO                                                        -->
+<!-- ============================================================ -->
+<div class="text-center mb-8 md:mb-10">
+  <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-sm font-bold mb-6">
+    <i data-lucide="book-open" class="w-4 h-4"></i>
+    操作ガイド
+  </div>
+  <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-4">
+    勤怠管理アプリ<br><span class="text-ads-accent-light">使い方ガイド</span>
+  </h1>
+  <p class="text-sm text-ads-muted max-w-md mx-auto leading-relaxed">
+    医療法人社団 スター歯科クリニック<br>
+    毎月の勤怠データを入力・確定するだけ。<br>
+    月末に山本さんへ自動でCSVが届きます。
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<!--  ONE-PAGE SUMMARY                                             -->
+<!-- ============================================================ -->
+<div class="bg-ads-surface border border-ads-border rounded-2xl p-6 md:p-8 mb-8">
+  <div class="text-center mb-6">
+    <p class="text-xl font-black text-slate-900 mb-1">
+      毎月やることは<span class="text-ads-accent-light">3つ</span>だけ
+    </p>
+    <p class="text-xs text-ads-muted">すべてスマホで完結します</p>
+  </div>
+
+  <!-- 3-step flow -->
+  <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-0 mb-6">
+    <div class="flex flex-col items-center w-32 p-3">
+      <div class="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-2">
+        <i data-lucide="calendar" class="w-7 h-7 text-emerald-600"></i>
+      </div>
+      <div class="font-bold text-slate-900 text-sm">例外を入力</div>
+      <div class="text-[11px] text-ads-muted mt-0.5">有給・休日出勤など</div>
+    </div>
+
+    <div class="flex items-center justify-center md:w-10 py-1 md:py-0">
+      <i data-lucide="arrow-right" class="w-5 h-5 text-ads-dim hidden md:block"></i>
+      <i data-lucide="arrow-down" class="w-5 h-5 text-ads-dim md:hidden"></i>
+    </div>
+
+    <div class="flex flex-col items-center w-32 p-3">
+      <div class="w-14 h-14 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-2">
+        <i data-lucide="eye" class="w-7 h-7 text-violet-600"></i>
+      </div>
+      <div class="font-bold text-slate-900 text-sm">プレビュー</div>
+      <div class="text-[11px] text-ads-muted mt-0.5">集計を確認</div>
+    </div>
+
+    <div class="flex items-center justify-center md:w-10 py-1 md:py-0">
+      <i data-lucide="arrow-right" class="w-5 h-5 text-ads-dim hidden md:block"></i>
+      <i data-lucide="arrow-down" class="w-5 h-5 text-ads-dim md:hidden"></i>
+    </div>
+
+    <div class="flex flex-col items-center w-32 p-3">
+      <div class="w-14 h-14 rounded-xl bg-ads-accent/10 border border-ads-accent/20 flex items-center justify-center mb-2">
+        <i data-lucide="send" class="w-7 h-7 text-ads-accent-light"></i>
+      </div>
+      <div class="font-bold text-slate-900 text-sm">確定する</div>
+      <div class="text-[11px] text-ads-muted mt-0.5">月末に自動送信</div>
+    </div>
+  </div>
+
+  <div class="flex justify-center">
+    <div class="flex items-center gap-2 text-xs text-ads-positive bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5">
+      <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+      入力は自動保存。途中で閉じても大丈夫です
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  STEP 1: アクセス                                              -->
+<!-- ============================================================ -->
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-8 h-8 bg-ads-accent rounded-xl flex items-center justify-center flex-shrink-0">
+      <span class="text-white font-black text-sm">1</span>
+    </div>
+    <div>
+      <h2 class="text-lg font-black text-slate-900">アプリを開く</h2>
+      <p class="text-xs text-ads-dim">ACCESS</p>
+    </div>
+  </div>
+
+  <!-- ブラウザUI再現 -->
+  <div class="bg-white border border-ads-border rounded-2xl overflow-hidden shadow-sm mb-4">
+    <div class="bg-slate-100 border-b border-ads-border px-4 py-2 flex items-center gap-3">
+      <div class="flex gap-1.5">
+        <div class="w-3 h-3 rounded-full bg-red-400"></div>
+        <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+        <div class="w-3 h-3 rounded-full bg-green-400"></div>
+      </div>
+      <div class="flex-1 bg-white rounded-lg border border-ads-border px-3 py-1">
+        <p class="text-xs text-ads-muted font-mono truncate">kintai-app-dyu.pages.dev</p>
+      </div>
+    </div>
+    <div class="p-6 text-center">
+      <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3 border border-amber-200">
+        <i data-lucide="smile" class="w-6 h-6 text-amber-600"></i>
+      </div>
+      <p class="text-sm font-bold text-slate-700 mb-1">ドクターを選択してください</p>
+      <div class="grid grid-cols-3 gap-2 max-w-xs mx-auto mt-3">
+        <div class="bg-ads-surface border border-ads-border rounded-lg p-2 text-center">
+          <p class="text-xs font-bold text-slate-700">生野</p>
+        </div>
+        <div class="bg-ads-surface border border-ads-border rounded-lg p-2 text-center">
+          <p class="text-xs font-bold text-slate-700">岡田</p>
+        </div>
+        <div class="bg-ads-surface border border-ads-border rounded-lg p-2 text-center">
+          <p class="text-xs font-bold text-slate-700">露口</p>
+        </div>
+      </div>
+      <p class="text-[10px] text-ads-dim mt-3">初回のみ選択。2回目以降は自動ログイン</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  STEP 2: 例外入力                                              -->
+<!-- ============================================================ -->
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
+      <span class="text-white font-black text-sm">2</span>
+    </div>
+    <div>
+      <h2 class="text-lg font-black text-slate-900">例外スケジュールを入力</h2>
+      <p class="text-xs text-ads-dim">EDIT</p>
+    </div>
+  </div>
+
+  <p class="text-sm text-ads-muted mb-4">
+    祝日・振替出勤はアプリが<span class="font-bold text-slate-700">自動入力済み</span>。変更がある日だけ操作します。
+  </p>
+
+  <!-- 3 types of exceptions -->
+  <div class="space-y-3 mb-4">
+    <div class="bg-white border border-emerald-200 rounded-xl p-4 flex items-start gap-3">
+      <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+        <i data-lucide="calendar-off" class="w-5 h-5 text-emerald-600"></i>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-slate-900">有給・欠勤</p>
+        <p class="text-xs text-ads-muted mt-0.5">カレンダーの日付をタップで切替。またはリストから日付+種類を選んで追加</p>
+      </div>
+    </div>
+
+    <div class="bg-white border border-orange-200 rounded-xl p-4 flex items-start gap-3">
+      <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+        <i data-lucide="briefcase" class="w-5 h-5 text-orange-600"></i>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-slate-900">休日出勤</p>
+        <p class="text-xs text-ads-muted mt-0.5">定休日や祝日に出勤した日を追加</p>
+      </div>
+    </div>
+
+    <div class="bg-white border border-purple-200 rounded-xl p-4 flex items-start gap-3">
+      <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+        <i data-lucide="clock" class="w-5 h-5 text-purple-600"></i>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-slate-900">時間変更</p>
+        <p class="text-xs text-ads-muted mt-0.5">遅刻・早退・残業など、通常と異なる出退勤時刻がある日を追加</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+    <i data-lucide="save" class="w-4 h-4 flex-shrink-0"></i>
+    <span>入力は<span class="font-bold">自動保存</span>。途中でアプリを閉じても消えません</span>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  STEP 3: プレビュー & 確定                                     -->
+<!-- ============================================================ -->
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center flex-shrink-0">
+      <span class="text-white font-black text-sm">3</span>
+    </div>
+    <div>
+      <h2 class="text-lg font-black text-slate-900">確認して確定する</h2>
+      <p class="text-xs text-ads-dim">CONFIRM</p>
+    </div>
+  </div>
+
+  <div class="space-y-3">
+    <div class="bg-ads-surface border border-ads-border rounded-xl p-4 flex items-start gap-3">
+      <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+        <span class="text-violet-600 font-black text-xs">A</span>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-slate-900">「データを作成・プレビュー」をタップ</p>
+        <p class="text-xs text-ads-muted mt-0.5">出勤日数・有給取得数などの集計と、日別の出退勤一覧が表示されます</p>
+      </div>
+    </div>
+
+    <div class="bg-ads-surface border border-ads-border rounded-xl p-4 flex items-start gap-3">
+      <div class="w-8 h-8 bg-ads-accent/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+        <span class="text-ads-accent-light font-black text-xs">B</span>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-slate-900">「確定して送信予約する」をタップ</p>
+        <p class="text-xs text-ads-muted mt-0.5">確認ダイアログで「確定する」を押せば完了</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 確定後のUI再現 -->
+  <div class="bg-emerald-500 rounded-xl p-4 mt-4 flex items-start gap-3">
+    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+      <i data-lucide="check-circle" class="w-5 h-5 text-white"></i>
+    </div>
+    <div>
+      <p class="text-sm font-bold text-white">2026年4月分を確定しました</p>
+      <p class="text-xs text-emerald-100 mt-0.5">自動送信予定: 4月30日 20:00 → 山本さん</p>
+      <div class="flex gap-2 mt-2">
+        <div class="text-[10px] text-white border border-white/40 rounded px-2 py-0.5 bg-white/10">今すぐ送信</div>
+        <div class="text-[10px] text-white border border-white/40 rounded px-2 py-0.5 bg-white/10">取り消す</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  今すぐ送信                                                    -->
+<!-- ============================================================ -->
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-8 h-8 bg-sky-500 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+    </div>
+    <div>
+      <h2 class="text-lg font-black text-slate-900">今すぐ送信</h2>
+      <p class="text-xs text-ads-dim">SEND NOW</p>
+    </div>
+  </div>
+
+  <div class="bg-ads-surface border border-ads-border rounded-xl p-4">
+    <p class="text-sm text-ads-muted mb-3">月末を待たずにすぐ送信したい場合</p>
+    <div class="flex items-center gap-3 bg-white rounded-lg p-3 border border-ads-border">
+      <i data-lucide="send" class="w-5 h-5 text-sky-500 flex-shrink-0"></i>
+      <div>
+        <p class="text-sm font-bold text-slate-900">確定済みバナーの「今すぐ送信」をタップ</p>
+        <p class="text-xs text-ads-muted mt-0.5"><span class="font-bold text-slate-700">自分のCSVだけ</span>が山本さんに即時送信されます</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  設定                                                         -->
+<!-- ============================================================ -->
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-8 h-8 bg-slate-500 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i data-lucide="settings" class="w-4 h-4 text-white"></i>
+    </div>
+    <div>
+      <h2 class="text-lg font-black text-slate-900">設定</h2>
+      <p class="text-xs text-ads-dim">SETTINGS</p>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-3">
+    <div class="bg-ads-surface border border-ads-border rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="calendar-x" class="w-4 h-4 text-slate-500"></i>
+        <p class="text-sm font-bold text-slate-900">定休日</p>
+      </div>
+      <p class="text-xs text-ads-muted">ヘッダー右上の歯車アイコンから変更。自動保存</p>
+    </div>
+    <div class="bg-ads-surface border border-ads-border rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="chevrons-left-right" class="w-4 h-4 text-slate-500"></i>
+        <p class="text-sm font-bold text-slate-900">対象月の切替</p>
+      </div>
+      <p class="text-xs text-ads-muted">対象月バナーの左右ボタンで前月・翌月に移動</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  TROUBLESHOOTING                                              -->
+<!-- ============================================================ -->
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-8 h-8 bg-ads-negative rounded-xl flex items-center justify-center flex-shrink-0">
+      <i data-lucide="life-buoy" class="w-4 h-4 text-white"></i>
+    </div>
+    <div>
+      <h2 class="text-lg font-black text-slate-900">困ったとき</h2>
+      <p class="text-xs text-ads-dim">TROUBLESHOOTING</p>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+
+    <!-- Q1: 月末を過ぎた -->
+    <div class="bg-red-50 border border-red-200 rounded-2xl overflow-hidden">
+      <div class="bg-red-100 px-4 py-2.5 flex items-center gap-2">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i>
+        <p class="text-sm font-bold text-red-800">月末までに確定し忘れた</p>
+      </div>
+      <div class="p-4">
+        <div class="flex flex-col gap-2">
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 bg-red-200 text-red-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">1</div>
+            <p class="text-xs text-slate-700">対象月バナーの<span class="font-bold">左矢印で先月に切り替え</span></p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 bg-red-200 text-red-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">2</div>
+            <p class="text-xs text-slate-700">例外スケジュールを入力・確認</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 bg-red-200 text-red-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">3</div>
+            <p class="text-xs text-slate-700">プレビューして<span class="font-bold">確定</span></p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 bg-red-200 text-red-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">4</div>
+            <p class="text-xs text-slate-700">「<span class="font-bold">今すぐ送信</span>」で手動送信</p>
+          </div>
+        </div>
+        <div class="mt-3 bg-white border border-red-100 rounded-lg px-3 py-2">
+          <p class="text-[11px] text-red-700">
+            <i data-lucide="info" class="w-3 h-3 inline-block mr-1 -mt-0.5"></i>
+            月末の自動送信は当月分のみ。先月分は「今すぐ送信」で手動送信してください
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q2: 確定後に修正したい -->
+    <div class="bg-white border border-ads-border rounded-2xl overflow-hidden">
+      <div class="bg-orange-50 px-4 py-2.5 flex items-center gap-2 border-b border-orange-200">
+        <i data-lucide="rotate-ccw" class="w-4 h-4 text-orange-600"></i>
+        <p class="text-sm font-bold text-orange-800">確定後にデータを修正したい</p>
+      </div>
+      <div class="p-4">
+        <div class="flex flex-col gap-2">
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 bg-orange-100 text-orange-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">1</div>
+            <p class="text-xs text-slate-700">確定済みバナーの「<span class="font-bold">確定を取り消して再編集する</span>」をタップ</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 bg-orange-100 text-orange-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">2</div>
+            <p class="text-xs text-slate-700">カレンダーが編集可能に戻ります</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 bg-orange-100 text-orange-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">3</div>
+            <p class="text-xs text-slate-700">修正して再度プレビュー・確定してください</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q3: 別のドクター -->
+    <div class="bg-white border border-ads-border rounded-2xl overflow-hidden">
+      <div class="bg-ads-surface px-4 py-2.5 flex items-center gap-2 border-b border-ads-border">
+        <i data-lucide="users" class="w-4 h-4 text-ads-accent"></i>
+        <p class="text-sm font-bold text-slate-800">別のドクターの画面になっている</p>
+      </div>
+      <div class="p-4">
+        <p class="text-xs text-ads-muted">ヘッダー右上の<span class="font-bold text-slate-700">歯車アイコン</span> → 「ドクターを変更する」で自分の名前を選び直してください</p>
+      </div>
+    </div>
+
+    <!-- Q4: エラー -->
+    <div class="bg-white border border-ads-border rounded-2xl overflow-hidden">
+      <div class="bg-ads-surface px-4 py-2.5 flex items-center gap-2 border-b border-ads-border">
+        <i data-lucide="wifi-off" class="w-4 h-4 text-ads-negative"></i>
+        <p class="text-sm font-bold text-slate-800">エラーが表示される</p>
+      </div>
+      <div class="p-4 space-y-2">
+        <div class="flex items-start gap-2.5">
+          <div class="w-5 h-5 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">1</div>
+          <p class="text-xs text-slate-700">Wi-Fi・モバイル通信の接続を確認</p>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <div class="w-5 h-5 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">2</div>
+          <p class="text-xs text-slate-700">ページを再読み込み（下にスワイプ）</p>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <div class="w-5 h-5 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">3</div>
+          <p class="text-xs text-slate-700">改善しなければDr.生野に連絡</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q5: CSV -->
+    <div class="bg-white border border-ads-border rounded-2xl overflow-hidden">
+      <div class="bg-ads-surface px-4 py-2.5 flex items-center gap-2 border-b border-ads-border">
+        <i data-lucide="file-down" class="w-4 h-4 text-ads-positive"></i>
+        <p class="text-sm font-bold text-slate-800">CSVを手元にダウンロードしたい</p>
+      </div>
+      <div class="p-4">
+        <p class="text-xs text-ads-muted">プレビュー下部の「<span class="font-bold text-slate-700">CSVを保存</span>」ボタンからダウンロードできます</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  TIMELINE                                                     -->
+<!-- ============================================================ -->
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-8 h-8 bg-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i data-lucide="calendar-check" class="w-4 h-4 text-white"></i>
+    </div>
+    <div>
+      <h2 class="text-lg font-black text-slate-900">月間スケジュール</h2>
+      <p class="text-xs text-ads-dim">TIMELINE</p>
+    </div>
+  </div>
+
+  <div class="relative pl-6 border-l-2 border-ads-border space-y-5">
+    <div class="relative">
+      <div class="absolute -left-[25px] w-3 h-3 bg-ads-accent rounded-full border-2 border-white"></div>
+      <div>
+        <p class="text-xs font-bold text-slate-700">月初</p>
+        <p class="text-xs text-ads-muted mt-0.5">今月分が自動で表示。例外があれば入力OK</p>
+      </div>
+    </div>
+    <div class="relative">
+      <div class="absolute -left-[25px] w-3 h-3 bg-emerald-500 rounded-full border-2 border-white"></div>
+      <div>
+        <p class="text-xs font-bold text-slate-700">随時</p>
+        <p class="text-xs text-ads-muted mt-0.5">有給・時間変更が発生したら都度入力</p>
+      </div>
+    </div>
+    <div class="relative">
+      <div class="absolute -left-[25px] w-3 h-3 bg-amber-500 rounded-full border-2 border-white"></div>
+      <div>
+        <p class="text-xs font-bold text-amber-700">25日頃</p>
+        <p class="text-xs text-amber-700 mt-0.5 font-bold">リマインドバナー表示。最終確認を</p>
+      </div>
+    </div>
+    <div class="relative">
+      <div class="absolute -left-[25px] w-3 h-3 bg-ads-negative rounded-full border-2 border-white"></div>
+      <div>
+        <p class="text-xs font-bold text-red-700">月末前</p>
+        <p class="text-xs text-red-700 mt-0.5 font-bold">必ず「確定」ボタンを押す</p>
+      </div>
+    </div>
+    <div class="relative">
+      <div class="absolute -left-[25px] w-3 h-3 bg-slate-400 rounded-full border-2 border-white"></div>
+      <div>
+        <p class="text-xs font-bold text-slate-700">月末 20:00</p>
+        <p class="text-xs text-ads-muted mt-0.5">確定済みデータが山本さんに自動送信</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  CONTACT                                                      -->
+<!-- ============================================================ -->
+<div class="bg-ads-surface border border-ads-border rounded-2xl p-6 text-center">
+  <i data-lucide="message-circle" class="w-8 h-8 text-ads-dim mx-auto mb-2"></i>
+  <p class="text-xs text-ads-muted mb-1">このガイドで解決しない場合</p>
+  <p class="text-base font-black text-slate-900">Dr.生野に相談してください</p>
+</div>
+
+<!-- CONTENT_END -->
+  </main>
+  <footer class="max-w-3xl mx-auto px-5 pb-10 pt-6 border-t border-ads-border/30">
+    <p class="text-xs text-ads-dim text-center">AI-Driven School の図解ツールで作成</p>
+  </footer>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

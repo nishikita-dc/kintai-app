@@ -654,13 +654,13 @@ export default function AdminPage() {
               <p className="text-xs text-gray-400">医療法人社団スター歯科クリニック</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <a href="/admin/mockup/" className="text-xs text-gray-400 hover:text-indigo-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:border-indigo-300 transition-colors">
+          <div className="flex items-center gap-1.5">
+            <a href="/admin/mockup/" className="text-xs text-gray-400 hover:text-indigo-600 border border-gray-200 rounded-lg px-2.5 py-1.5 hover:border-indigo-300 transition-colors">
               モック
             </a>
             <button
               onClick={handleLogout}
-              className="text-xs text-gray-400 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:border-gray-300 transition-colors"
+              className="text-xs text-gray-400 hover:text-gray-700 border border-gray-200 rounded-lg px-2.5 py-1.5 hover:border-gray-300 transition-colors"
             >
               ログアウト
             </button>
@@ -819,6 +819,64 @@ export default function AdminPage() {
               )}
             </div>
           )}
+        </section>
+
+        {/* ガイド・リンク */}
+        <section className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ガイド・リンク</p>
+
+          <div className="grid sm:grid-cols-2 gap-2">
+            <a
+              href="https://diagram-kintai-admin-guide.surge.sh"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2.5 p-3 rounded-xl border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 transition-colors group"
+            >
+              <span className="w-8 h-8 bg-indigo-200 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-300 transition-colors" aria-hidden="true">
+                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              </span>
+              <div>
+                <p className="text-xs font-bold text-indigo-800">ダッシュボードの使い方</p>
+                <p className="text-[10px] text-indigo-500">自動送信の仕組み・Dr管理</p>
+              </div>
+            </a>
+
+            <a
+              href="https://diagram-kintai-guide.surge.sh"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2.5 p-3 rounded-xl border border-emerald-100 bg-emerald-50 hover:bg-emerald-100 transition-colors group"
+            >
+              <span className="w-8 h-8 bg-emerald-200 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-300 transition-colors" aria-hidden="true">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+              </span>
+              <div>
+                <p className="text-xs font-bold text-emerald-800">Dr向けアプリの使い方</p>
+                <p className="text-[10px] text-emerald-500">新人Drへの案内用</p>
+              </div>
+            </a>
+          </div>
+
+          <div className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 bg-gray-50">
+            <span className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0" aria-hidden="true">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-gray-700">アプリURL（新人Dr共有用）</p>
+              <p className="text-[10px] text-gray-400 font-mono truncate">https://kintai-app-dyu.pages.dev</p>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText('https://kintai-app-dyu.pages.dev');
+                const btn = document.getElementById('copy-url-btn');
+                if (btn) { btn.textContent = 'コピー済み'; setTimeout(() => { btn.textContent = 'コピー'; }, 2000); }
+              }}
+              id="copy-url-btn"
+              className="text-xs bg-white text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 hover:border-gray-300 transition-colors font-medium flex-shrink-0"
+            >
+              コピー
+            </button>
+          </div>
         </section>
 
         {/* 月選択 */}
