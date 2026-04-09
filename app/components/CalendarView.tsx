@@ -156,8 +156,8 @@ function CalendarView({
             {d}
           </span>
           {statusLabel && (
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${textColor} bg-white/80 dark:bg-slate-900/60 shadow-sm`}>
-              {statusLabel.slice(0, 5)}
+            <span className={`text-[9px] leading-none font-bold px-1 py-0.5 rounded ${textColor} bg-white/80 dark:bg-slate-900/60`}>
+              {statusLabel}
             </span>
           )}
         </div>
