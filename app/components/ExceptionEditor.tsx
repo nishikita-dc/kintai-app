@@ -6,6 +6,8 @@ import { WEEK_DAYS_JA, USER_ABSENT_TYPES } from '@/lib/constants';
 import type { UserAbsentType } from '@/lib/constants';
 
 interface ExceptionEditorProps {
+  year: number;
+  month: number;
   extraWorkDays: string[];
   absentRecords: AbsentRecord[];
   timeChanges: TimeChange[];
@@ -20,6 +22,8 @@ function getWeekDay(dateStr: string) {
 }
 
 export default function ExceptionEditor({
+  year,
+  month,
   extraWorkDays,
   absentRecords,
   timeChanges,
@@ -28,6 +32,11 @@ export default function ExceptionEditor({
   setTimeChanges,
   disabled = false,
 }: ExceptionEditorProps) {
+  const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+
+  function isInTargetMonth(dateStr: string): boolean {
+    return dateStr.startsWith(monthPrefix);
+  }
   const [tempExtraDate, setTempExtraDate] = useState('');
   const [tempAbsentDate, setTempAbsentDate] = useState('');
   const [tempAbsentType, setTempAbsentType] = useState<UserAbsentType>('有給');
@@ -44,6 +53,10 @@ export default function ExceptionEditor({
       setExtraError('日付を選択してください');
       return;
     }
+    if (!isInTargetMonth(tempExtraDate)) {
+      setExtraError(`${year}年${month}月の日付を選択してください`);
+      return;
+    }
     if (extraWorkDays.includes(tempExtraDate)) {
       setExtraError('すでに登録済みの日付です');
       return;
@@ -58,6 +71,10 @@ export default function ExceptionEditor({
       setAbsentError('日付を選択してください');
       return;
     }
+    if (!isInTargetMonth(tempAbsentDate)) {
+      setAbsentError(`${year}年${month}月の日付を選択してください`);
+      return;
+    }
     setAbsentError(null);
     setAbsentRecords((prev) =>
       [...prev.filter((r) => r.date !== tempAbsentDate), { date: tempAbsentDate, type: tempAbsentType }].sort(
@@ -70,6 +87,10 @@ export default function ExceptionEditor({
   const addChange = () => {
     if (!tempChangeDate || !tempInTime || !tempOutTime) {
       setChangeError('日付・開始・終了をすべて入力してください');
+      return;
+    }
+    if (!isInTargetMonth(tempChangeDate)) {
+      setChangeError(`${year}年${month}月の日付を選択してください`);
       return;
     }
     if (tempInTime >= tempOutTime) {
@@ -189,9 +210,10 @@ export default function ExceptionEditor({
                     onClick={() =>
                       setAbsentRecords((prev) => prev.filter((x) => x.date !== r.date))
                     }
-                    className="text-slate-400 hover:text-red-500"
+                    className="text-slate-400 hover:text-red-500 p-2 -mr-1 flex items-center justify-center"
+                    aria-label="削除"
                   >
-                    <i className="fa-solid fa-trash-can" />
+                    <i className="fa-solid fa-trash-can" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -332,9 +354,10 @@ export default function ExceptionEditor({
               </div>
               <button
                 onClick={() => setTimeChanges((prev) => prev.filter((x) => x.date !== c.date))}
-                className="text-slate-400 hover:text-red-500 px-2"
+                className="text-slate-400 hover:text-red-500 p-2 flex items-center justify-center"
+                aria-label="削除"
               >
-                <i className="fa-solid fa-trash-can" />
+                <i className="fa-solid fa-trash-can" aria-hidden="true" />
               </button>
             </div>
           ))}

@@ -53,6 +53,10 @@ export const JAPANESE_HOLIDAYS: Record<string, string> = new Proxy(
   },
 );
 
+// ── 運用担当者 ───────────────────────────────────────────────────
+/** 勤怠CSVの送信先担当者名。UIテキスト・メール本文で使用。 */
+export const ADMIN_NAME = '山本さん';
+
 // ── 曜日名（日本語）────────────────────────────────────────────────
 /** 日〜土の曜日名（インデックス = Date.getDay() の戻り値） */
 export const WEEK_DAYS_JA = ['日', '月', '火', '水', '木', '金', '土'] as const;

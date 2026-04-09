@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { PreviewRow, Summary } from '@/types';
+import { ADMIN_NAME } from '@/lib/constants';
 
 interface PreviewTableProps {
   previewData: PreviewRow[];
@@ -172,7 +173,7 @@ export default function PreviewTable({
                   <p className="text-xs text-green-100 mt-0.5">確定日時: {confirmedAt}</p>
                 )}
                 <p className="text-xs text-green-100 mt-0.5">
-                  月末に山本さんへ自動送信されます
+                  月末に{ADMIN_NAME}へ自動送信されます
                 </p>
                 {onCancelConfirm && (
                   <button
@@ -215,7 +216,7 @@ export default function PreviewTable({
               <div>
                 <p className="text-sm font-bold text-amber-800">月末に自動送信されます</p>
                 <p className="text-xs text-amber-700 mt-0.5">
-                  確定すると月末 20:00 に山本さんへCSVが自動送信されます。確定後も取り消して再編集できます。
+                  確定すると月末 20:00 に{ADMIN_NAME}へCSVが自動送信されます。確定後も取り消して再編集できます。
                 </p>
               </div>
             </div>

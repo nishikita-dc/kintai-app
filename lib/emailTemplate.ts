@@ -1,4 +1,5 @@
 import type { ConfirmData } from '../types';
+import { ADMIN_NAME } from './constants';
 
 // ── HTML エスケープ ──────────────────────────────────────────
 function escapeHtml(str: string): string {
@@ -111,7 +112,7 @@ export function buildMonthlyEmailHtml(params: {
   <!-- 本文 -->
   <div style="background:white;padding:28px 24px;border:1px solid #e2e8f0;border-top:none;">
 
-    <p style="color:#1e293b;font-size:14px;margin:0 0 6px;font-weight:600;">山本様</p>
+    <p style="color:#1e293b;font-size:14px;margin:0 0 6px;font-weight:600;">${escapeHtml(ADMIN_NAME.replace(/さん$/, ''))}様</p>
     <p style="color:#475569;font-size:14px;line-height:1.8;margin:0 0 24px;">
       お疲れ様です。<br>
       ${year}年${month}月分の勤怠データが確定されました（<strong>${entries.length}名</strong>）。<br>

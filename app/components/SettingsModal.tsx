@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { getJapaneseHolidays, WEEK_DAYS_JA } from '@/lib/constants';
 
 interface SettingsModalProps {
@@ -19,6 +20,42 @@ export default function SettingsModal({
   onDoctorChange,
   onClose,
 }: SettingsModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // フォーカストラップ + Escキーで閉じる
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    // 開いた瞬間に最初のフォーカス可能要素にフォーカス
+    const timer = setTimeout(() => {
+      dialogRef.current?.querySelector<HTMLElement>('button')?.focus();
+    }, 0);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(timer);
+    };
+  }, [onClose]);
+
   const currentYear = new Date().getFullYear();
   const yearHolidays = getJapaneseHolidays(currentYear);
   const allHolidaysList = Object.entries(yearHolidays)
@@ -26,8 +63,17 @@ export default function SettingsModal({
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden">
+    <div
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="個人設定"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden"
+      >
         {/* ヘッダー */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
@@ -36,9 +82,10 @@ export default function SettingsModal({
           </h3>
           <button
             onClick={onClose}
+            aria-label="閉じる"
             className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition"
           >
-            <i className="fa-solid fa-xmark text-slate-400" />
+            <i className="fa-solid fa-xmark text-slate-400" aria-hidden="true" />
           </button>
         </div>
 

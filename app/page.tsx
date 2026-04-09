@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { PreviewRow, Summary, DoctorItem } from '@/types';
-import { JAPANESE_HOLIDAYS, DEFAULT_WORK_TIMES, WEEK_DAYS_JA } from '@/lib/constants';
+import { JAPANESE_HOLIDAYS, DEFAULT_WORK_TIMES, WEEK_DAYS_JA, ADMIN_NAME } from '@/lib/constants';
 import { buildKintaiCsv } from '@/lib/csvFormatter';
 import type { CsvWorkRow } from '@/lib/csvFormatter';
 import { apiHeaders } from '@/lib/api';
@@ -426,15 +426,32 @@ export default function Home() {
         {/* 対象月バナー */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-brand-500 text-white w-10 h-10 rounded-lg flex items-center justify-center">
-              <i className="fa-solid fa-calendar-days text-lg" />
-            </div>
-            <div>
+            <button
+              onClick={() => {
+                if (month === 1) { setYear(year - 1); setMonth(12); }
+                else setMonth(month - 1);
+              }}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition text-slate-500"
+              aria-label="前月"
+            >
+              <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
+            </button>
+            <div className="text-center">
               <p className="text-xs text-slate-500 font-bold">対象月</p>
               <p className="text-xl font-bold text-slate-800">
                 {year}年<span className="text-brand-600">{month}月</span>分
               </p>
             </div>
+            <button
+              onClick={() => {
+                if (month === 12) { setYear(year + 1); setMonth(1); }
+                else setMonth(month + 1);
+              }}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition text-slate-500"
+              aria-label="翌月"
+            >
+              <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true" />
+            </button>
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">
@@ -483,6 +500,8 @@ export default function Home() {
             />
 
             <ExceptionEditor
+              year={year}
+              month={month}
               extraWorkDays={extraWorkDays}
               absentRecords={absentRecords}
               timeChanges={timeChanges}
@@ -542,8 +561,12 @@ export default function Home() {
 
       {/* 確定確認ダイアログ */}
       {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowConfirmDialog(false); }}
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowConfirmDialog(false); }}
+        >
+          <div role="dialog" aria-modal="true" aria-label="確定確認" className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center border-4 border-brand-100">
                 <i className="fa-solid fa-paper-plane text-brand-500 text-xl" />
@@ -554,7 +577,7 @@ export default function Home() {
             </h3>
             <p className="text-sm text-slate-500 text-center mb-5">
               {year}年{month}月の勤怠データを確定します。<br />
-              月末に山本さんへ自動送信されます。<br />
+              月末に{ADMIN_NAME}へ自動送信されます。<br />
               よろしいですか？
             </p>
             <div className="flex gap-3">
