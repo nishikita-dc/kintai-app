@@ -8,6 +8,8 @@ import type { UserAbsentType } from '@/lib/constants';
 interface ExceptionEditorProps {
   year: number;
   month: number;
+  weekdayHoliday: number;
+  holidays: number[];
   extraWorkDays: string[];
   absentRecords: AbsentRecord[];
   timeChanges: TimeChange[];
@@ -24,6 +26,8 @@ function getWeekDay(dateStr: string) {
 export default function ExceptionEditor({
   year,
   month,
+  weekdayHoliday,
+  holidays,
   extraWorkDays,
   absentRecords,
   timeChanges,
@@ -253,14 +257,21 @@ export default function ExceptionEditor({
             {extraWorkDays.length === 0 && (
               <span className="text-xs text-slate-400 dark:text-slate-500">登録なし</span>
             )}
-            {extraWorkDays.map((d) => (
+            {extraWorkDays.map((d) => {
+              const dow = new Date(d).getDay();
+              const isHolidayWeekWork = dow === weekdayHoliday;
+              const label = isHolidayWeekWork ? '祝日週出勤' : '休日出勤';
+              const borderCls = isHolidayWeekWork ? 'border-amber-200 dark:border-amber-800' : 'border-orange-200 dark:border-orange-800';
+              const textCls = isHolidayWeekWork ? 'text-amber-800 dark:text-amber-300' : 'text-orange-800 dark:text-orange-300';
+              const badgeCls = isHolidayWeekWork ? 'text-amber-500' : 'text-orange-500';
+              return (
               <div
                 key={d}
-                className="flex justify-between items-center bg-white dark:bg-slate-700 border border-orange-200 dark:border-orange-800 text-xs px-2 py-1.5 rounded shadow-sm"
+                className={`flex justify-between items-center bg-white dark:bg-slate-700 border ${borderCls} text-xs px-2 py-1.5 rounded shadow-sm`}
               >
-                <span className="font-bold text-orange-800">
-                  {d.slice(5)} <span className="text-orange-500">({getWeekDay(d)})</span>{' '}
-                  <span className="text-orange-400 font-normal ml-1">(出勤)</span>
+                <span className={`font-bold ${textCls}`}>
+                  {d.slice(5)} <span className={badgeCls}>({getWeekDay(d)})</span>{' '}
+                  <span className={`${badgeCls} font-normal ml-1`}>({label})</span>
                 </span>
                 <button
                   onClick={() => setExtraWorkDays((prev) => prev.filter((x) => x !== d))}
@@ -269,7 +280,8 @@ export default function ExceptionEditor({
                   <i className="fa-solid fa-trash-can" />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

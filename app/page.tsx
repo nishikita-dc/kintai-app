@@ -203,7 +203,7 @@ export default function Home() {
         isHoliday = false;
         if (holidays.includes(dayOfWeek)) {
           if (dayOfWeek === weekdayHoliday) {
-            status = '祝日振替診療';
+            status = '祝日週出勤';
             isSubstitute = true;
           } else {
             status = '休日出勤';
@@ -227,7 +227,7 @@ export default function Home() {
         if (changeRec) {
           start = changeRec.inTime.replace(':', '');
           end = changeRec.outTime.replace(':', '');
-          if (status === '通常' || status === '祝日振替診療') status = '時間変更';
+          if (status === '通常' || status === '祝日週出勤') status = '時間変更';
         }
 
         csvRows.push({ dateStr, start, end });
@@ -584,6 +584,8 @@ export default function Home() {
             <ExceptionEditor
               year={year}
               month={month}
+              weekdayHoliday={weekdayHoliday}
+              holidays={holidays}
               extraWorkDays={extraWorkDays}
               absentRecords={absentRecords}
               timeChanges={timeChanges}

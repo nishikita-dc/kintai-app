@@ -87,10 +87,17 @@ function CalendarView({
 
     if (isExtra) {
       if (isNationalHoliday || isHoliday) {
-        statusLabel = dayOfWeek === weekdayHoliday ? '振替出勤' : '休日出勤';
-        bgColor = 'bg-orange-50 dark:bg-orange-900/30';
-        textColor = 'text-orange-700 dark:text-orange-300';
-        borderColor = 'border-orange-200';
+        if (dayOfWeek === weekdayHoliday) {
+          statusLabel = '祝日週出勤';
+          bgColor = 'bg-amber-50 dark:bg-amber-900/30';
+          textColor = 'text-amber-700 dark:text-amber-300';
+          borderColor = 'border-amber-200';
+        } else {
+          statusLabel = '休日出勤';
+          bgColor = 'bg-orange-50 dark:bg-orange-900/30';
+          textColor = 'text-orange-700 dark:text-orange-300';
+          borderColor = 'border-orange-200';
+        }
       }
     } else if (absentRec) {
       statusLabel = absentRec.type;
@@ -158,7 +165,8 @@ function CalendarView({
         {statusLabel && (
           <div className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl">
             <div className={`h-full rounded-b-xl ${
-              statusLabel.includes('出勤') ? 'bg-orange-400'
+              statusLabel === '祝日週出勤' ? 'bg-amber-400'
+              : statusLabel === '休日出勤' ? 'bg-orange-400'
               : statusLabel === '有給' ? 'bg-emerald-400'
               : statusLabel === '欠勤' ? 'bg-red-400'
               : statusLabel === '祝日' ? 'bg-pink-400'
