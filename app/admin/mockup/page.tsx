@@ -423,25 +423,38 @@ export default function AdminMockupPage() {
         {/* 月選択 */}
         <section className="bg-white rounded-2xl border border-gray-200 p-5">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">対象月を選択</p>
-          <div className="flex flex-wrap gap-2">
-            {MOCK_MONTHS.map((m, idx) => (
-              <button
-                key={m}
-                onClick={() => setSelectedMonth(m)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  selectedMonth === m
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="appearance-none bg-white border border-gray-200 rounded-xl pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent cursor-pointer shadow-sm"
               >
-                {formatMonthLabel(m)}
-                {idx === 0 && (
-                  <span className={`text-xs rounded-full px-1.5 py-0.5 font-normal ${selectedMonth === m ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
-                    最新
-                  </span>
-                )}
-              </button>
-            ))}
+                {Array.from(new Set(MOCK_MONTHS.map((m) => m.slice(0, 4))))
+                  .sort((a, b) => b.localeCompare(a))
+                  .map((year) => (
+                    <optgroup key={year} label={`${year}年`}>
+                      {MOCK_MONTHS
+                        .filter((m) => m.startsWith(year))
+                        .map((m) => (
+                          <option key={m} value={m}>
+                            {formatMonthLabel(m)}{m === MOCK_MONTHS[0] ? '　★最新' : ''}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            {selectedMonth === MOCK_MONTHS[0] && (
+              <span className="text-xs bg-indigo-100 text-indigo-600 rounded-full px-2.5 py-1 font-medium">
+                最新月
+              </span>
+            )}
           </div>
           {selectedMonth === '2026-05' && (
             <p className="mt-3 text-sm text-gray-400 bg-gray-50 rounded-xl p-3 text-center">
