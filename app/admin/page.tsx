@@ -857,25 +857,71 @@ export default function AdminPage() {
             </a>
           </div>
 
-          <div className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 bg-gray-50">
-            <span className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0" aria-hidden="true">
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-gray-700">アプリURL（新人Dr共有用）</p>
-              <p className="text-[10px] text-gray-400 font-mono truncate">https://kintai-app-dyu.pages.dev</p>
+          {/* 新人Dr向け案内テンプレート */}
+          <div className="border border-amber-200 bg-amber-50 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-amber-100">
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true">📋</span>
+                <p className="text-xs font-bold text-amber-800">新人Dr向け案内文（コピペ用）</p>
+              </div>
+              <button
+                onClick={() => {
+                  const text = `【勤怠管理アプリの設定をお願いします】
+
+下記URLをスマホのブラウザ（Safari または Chrome）で開いてください。
+
+▼ アプリURL
+https://kintai-app-dyu.pages.dev
+
+■ ホーム画面への追加（必ず行ってください）
+iPhone（Safari）：画面下の共有ボタン → 「ホーム画面に追加」
+Android（Chrome）：右上の「︙」→ 「ホーム画面に追加」
+
+■ 初回設定（最初に必ず行ってください）
+1. アプリを開き、自分の名前を選択
+2. 右上の歯車アイコンをタップ
+3. 定休日を設定（日曜＋もう1日の休みの曜日を選択）
+
+設定は以上です。毎月の使い方は下記ガイドをご確認ください。
+
+▼ アプリの使い方ガイド
+https://diagram-kintai-guide.surge.sh
+
+不明点はDr.生野に聞いてください。`;
+                  navigator.clipboard.writeText(text);
+                  const btn = document.getElementById('copy-onboard-btn');
+                  if (btn) { btn.textContent = 'コピー済み!'; setTimeout(() => { btn.textContent = 'コピー'; }, 2000); }
+                }}
+                id="copy-onboard-btn"
+                className="text-xs bg-white text-amber-700 border border-amber-300 rounded-lg px-3 py-1.5 hover:bg-amber-50 hover:border-amber-400 transition-colors font-bold flex-shrink-0"
+              >
+                コピー
+              </button>
             </div>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText('https://kintai-app-dyu.pages.dev');
-                const btn = document.getElementById('copy-url-btn');
-                if (btn) { btn.textContent = 'コピー済み'; setTimeout(() => { btn.textContent = 'コピー'; }, 2000); }
-              }}
-              id="copy-url-btn"
-              className="text-xs bg-white text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 hover:border-gray-300 transition-colors font-medium flex-shrink-0"
-            >
-              コピー
-            </button>
+            <div className="px-4 py-3">
+              <pre className="text-[11px] text-gray-600 whitespace-pre-wrap leading-relaxed font-sans">{`【勤怠管理アプリの設定をお願いします】
+
+下記URLをスマホのブラウザ（Safari または Chrome）で開いてください。
+
+▼ アプリURL
+https://kintai-app-dyu.pages.dev
+
+■ ホーム画面への追加（必ず行ってください）
+iPhone（Safari）：画面下の共有ボタン → 「ホーム画面に追加」
+Android（Chrome）：右上の「︙」→ 「ホーム画面に追加」
+
+■ 初回設定（最初に必ず行ってください）
+1. アプリを開き、自分の名前を選択
+2. 右上の歯車アイコンをタップ
+3. 定休日を設定（日曜＋もう1日の休みの曜日を選択）
+
+設定は以上です。毎月の使い方は下記ガイドをご確認ください。
+
+▼ アプリの使い方ガイド
+https://diagram-kintai-guide.surge.sh
+
+不明点はDr.生野に聞いてください。`}</pre>
+            </div>
           </div>
         </section>
 
