@@ -110,7 +110,7 @@ function CalendarView({
         onClick={() => !disabled && onToggleDate(dateStr)}
         disabled={disabled}
         aria-label={ariaLabel}
-        className={`h-20 rounded-xl ${bgColor} p-1.5 transition-all relative group overflow-hidden text-left ${isToday ? 'ring-2 ring-brand-400 ring-offset-1' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-brand-300 focus:outline-none active:scale-95'}`}
+        className={`h-20 rounded-xl ${bgColor} dark:bg-opacity-20 p-1.5 transition-all relative group overflow-hidden text-left ripple ${isToday ? 'ring-2 ring-brand-400 ring-offset-1 dark:ring-offset-slate-900' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-brand-300 focus:outline-none active:scale-95'}`}
       >
         <div className="flex justify-between items-start">
           <span

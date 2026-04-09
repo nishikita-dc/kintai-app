@@ -398,7 +398,7 @@ export default function Home() {
 
   // ── メイン UI ──────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-20 bg-slate-50 dark:bg-slate-900">
       <header className="bg-gradient-to-r from-brand-500 via-brand-400 to-amber-400 shadow-lg sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3.5 flex justify-between items-center">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -496,7 +496,7 @@ export default function Home() {
         })()}
 
         {/* 対象月バナー */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
@@ -532,7 +532,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition hover:shadow-md">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition hover:shadow-md">
           <h2 className="text-lg font-bold mb-4 pb-2 text-slate-700 flex items-center border-b border-slate-200">
             <i className="fa-solid fa-calendar-check mr-2 text-brand-500" />
             例外スケジュールの修正
@@ -619,7 +619,7 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="text-center p-6 text-slate-400 text-xs">
+      <footer className="text-center p-6 text-slate-400 dark:text-slate-500 text-xs">
         &copy; {new Date().getFullYear()} Star Dental Clinic System.
       </footer>
 
@@ -640,7 +640,7 @@ export default function Home() {
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowConfirmDialog(false); }}
         >
-          <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-label="確定確認" className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+          <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-label="確定確認" className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200 dark:border-slate-700 animation-scale-in">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center border-4 border-brand-100">
                 <i className="fa-solid fa-paper-plane text-brand-500 text-xl" />

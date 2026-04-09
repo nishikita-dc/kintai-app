@@ -29,7 +29,7 @@ export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-2xl">
         {/* ヘッダー */}
         <div className="text-center mb-10">

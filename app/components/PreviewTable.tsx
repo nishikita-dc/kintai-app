@@ -64,7 +64,7 @@ export default function PreviewTable({
   const cancelDialogRef = useFocusTrap(useCallback(() => setShowCancelDialog(false), []));
 
   return (
-    <div className="mt-8 bg-white p-6 rounded-xl shadow-lg border border-brand-100 animation-fade-in relative">
+    <div className="mt-8 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border border-brand-100 dark:border-slate-700 animation-fade-in relative">
       <h3 className="font-bold text-slate-700 mb-4 flex justify-between items-center border-b pb-3">
         <span className="flex items-center gap-2">
           <i className="fa-solid fa-table-list text-brand-500" />
@@ -113,36 +113,37 @@ export default function PreviewTable({
         </div>
       </div>
 
-      {/* プレビューテーブル */}
-      <div className="overflow-hidden border border-slate-200 rounded-lg mb-6">
+      {/* プレビュー: デスクトップ=テーブル / モバイル=カード */}
+      {/* デスクトップテーブル */}
+      <div className="hidden sm:block overflow-hidden border border-slate-200 dark:border-slate-700 rounded-xl mb-6">
         <div className="overflow-x-auto max-h-80 overflow-y-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 sticky top-0 z-10">
+          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-10">
               <tr>
                 {['日付', '曜日', '区分', '出勤', '退勤'].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-slate-100">
+            <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
               {previewData.map((row, idx) => (
                 <tr
                   key={idx}
-                  className={`hover:bg-slate-50 transition ${row.type !== '通常' ? 'bg-yellow-50/50' : ''}`}
+                  className={`hover:bg-slate-50 dark:hover:bg-slate-700 transition ${row.type !== '通常' ? 'bg-yellow-50/50 dark:bg-yellow-900/10' : ''}`}
                 >
-                  <td className="px-4 py-2.5 whitespace-nowrap text-slate-600">{row.date}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-slate-600 dark:text-slate-300">{row.date}</td>
                   <td
                     className={`px-4 py-2.5 whitespace-nowrap font-bold ${
                       row.weekIdx === 0
                         ? 'text-red-500'
                         : row.weekIdx === 6
                           ? 'text-blue-500'
-                          : 'text-slate-600'
+                          : 'text-slate-600 dark:text-slate-300'
                     }`}
                   >
                     {row.week}
@@ -152,10 +153,10 @@ export default function PreviewTable({
                       {row.type}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap font-mono text-slate-700">
+                  <td className="px-4 py-2.5 whitespace-nowrap font-mono text-slate-700 dark:text-slate-300">
                     {row.in}
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap font-mono text-slate-700">
+                  <td className="px-4 py-2.5 whitespace-nowrap font-mono text-slate-700 dark:text-slate-300">
                     {row.out}
                   </td>
                 </tr>
@@ -163,6 +164,41 @@ export default function PreviewTable({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* モバイルカード */}
+      <div className="sm:hidden space-y-2 max-h-96 overflow-y-auto mb-6 pr-1">
+        {previewData.map((row, idx) => (
+          <div
+            key={idx}
+            className={`rounded-xl p-3 border animation-slide-up ${
+              row.type !== '通常'
+                ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+            }`}
+            style={{ animationDelay: `${idx * 20}ms` }}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold ${
+                  row.weekIdx === 0 ? 'text-red-500' : row.weekIdx === 6 ? 'text-blue-500' : 'text-slate-700 dark:text-slate-200'
+                }`}>
+                  {row.date} ({row.week})
+                </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${typeClass(row)}`}>
+                  {row.type}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-slate-400">出勤</span>
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-200">{row.in}</span>
+              <span className="text-slate-300">→</span>
+              <span className="text-slate-400">退勤</span>
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-200">{row.out}</span>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* アクションエリア */}

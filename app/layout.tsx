@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           crossOrigin="anonymous"
         />
       </head>
-      <body className="bg-slate-50 text-slate-700 font-sans antialiased">
+      <body className="bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-sans antialiased transition-colors">
         {children}
       </body>
     </html>

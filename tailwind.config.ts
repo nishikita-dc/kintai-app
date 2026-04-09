@@ -23,6 +23,7 @@ const config: Config = {
       },
     },
   },
+  darkMode: 'media',
   plugins: [],
 };
 
