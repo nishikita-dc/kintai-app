@@ -3,6 +3,11 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: '勤怠管理ダッシュボード',
   description: 'スター歯科クリニック 勤怠管理ダッシュボード',
+  icons: {
+    icon: '/icon-admin-192.png',
+    apple: '/apple-touch-icon-admin.png',
+  },
+  manifest: '/manifest-admin.json',
   openGraph: {
     title: '勤怠管理ダッシュボード',
     description: 'スター歯科クリニック 勤怠管理ダッシュボード',

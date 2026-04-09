@@ -4,6 +4,11 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'スター歯科クリニック 勤怠管理アプリ',
   description: '勤怠打刻データ作成ツール',
+  icons: {
+    icon: '/icon-192.png',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/manifest.json',
   openGraph: {
     title: 'スター歯科クリニック 勤怠管理アプリ',
     description: '勤怠打刻データ作成ツール',
