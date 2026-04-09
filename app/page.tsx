@@ -387,9 +387,7 @@ export default function Home() {
       <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="bg-brand-500 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-md">
-              <i className="fa-solid fa-tooth text-xl" />
-            </div>
+            <img src="/logo.png" alt="スター歯科クリニック" className="w-10 h-10 rounded-lg shadow-md" />
             <div>
               <h1 className="text-lg font-bold text-slate-800 leading-tight">
                 勤怠管理アプリ{' '}
@@ -397,7 +395,7 @@ export default function Home() {
                   Ver 5.0
                 </span>
               </h1>
-              <p className="text-xs text-slate-500">スター歯科クリニック 西宮北口駅前院</p>
+              <p className="text-xs text-slate-500">医療法人社団 スター歯科クリニック</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

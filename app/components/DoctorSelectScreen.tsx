@@ -23,11 +23,9 @@ export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps
       <div className="w-full max-w-2xl">
         {/* ヘッダー */}
         <div className="text-center mb-10">
-          <div className="bg-brand-500 text-white w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-4">
-            <i className="fa-solid fa-tooth text-3xl" />
-          </div>
+          <img src="/logo.png" alt="スター歯科クリニック" className="w-16 h-16 rounded-2xl shadow-lg mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-800 mb-1">勤怠管理アプリ</h1>
-          <p className="text-sm text-slate-500 mb-6">スター歯科クリニック 西宮北口駅前院</p>
+          <p className="text-sm text-slate-500 mb-6">医療法人社団 スター歯科クリニック</p>
           <div className="bg-white rounded-xl border border-slate-200 px-5 py-3 inline-flex items-center gap-2 shadow-sm">
             <i className="fa-solid fa-user-doctor text-brand-500" />
             <p className="text-slate-700 font-bold text-sm">

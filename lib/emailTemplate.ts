@@ -105,7 +105,7 @@ export function buildMonthlyEmailHtml(params: {
 
   <!-- ヘッダー -->
   <div style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);color:white;padding:24px;border-radius:12px 12px 0 0;">
-    <p style="margin:0;font-size:18px;font-weight:700;">🦷 スター歯科クリニック 西宮北口駅前院</p>
+    <p style="margin:0;font-size:18px;font-weight:700;">🦷 医療法人社団 スター歯科クリニック</p>
     <p style="margin:6px 0 0;opacity:0.85;font-size:13px;">${year}年${month}月分 勤怠データ確定のご連絡</p>
   </div>
 
