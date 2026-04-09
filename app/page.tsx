@@ -360,7 +360,7 @@ export default function Home() {
       const res = await fetch('/api/send-monthly', {
         method: 'POST',
         headers: apiHeaders(),
-        body: JSON.stringify({ year, month }),
+        body: JSON.stringify({ year, month, empId }),
       });
       const data = (await res.json()) as { ok?: boolean; message?: string; error?: string; sent?: number };
       if (!res.ok) {
@@ -373,7 +373,7 @@ export default function Home() {
     } finally {
       setIsSending(false);
     }
-  }, [year, month]);
+  }, [year, month, empId]);
 
   // 月が変わったら送信結果をリセット
   useEffect(() => {

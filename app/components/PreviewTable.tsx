@@ -201,7 +201,7 @@ export default function PreviewTable({
                       {isSending ? (
                         <><i className="fa-solid fa-spinner fa-spin" /> 送信中...</>
                       ) : (
-                        <><i className="fa-solid fa-paper-plane" /> 全員分を今すぐ送信</>
+                        <><i className="fa-solid fa-paper-plane" /> 今すぐ送信</>
                       )}
                     </button>
                   )}

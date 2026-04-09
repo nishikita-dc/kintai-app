@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { DOCTOR_LIST } from '@/lib/constants';
 
 // ── 型定義 ────────────────────────────────────────────────────────────
@@ -45,6 +45,12 @@ type DayType = 'work' | 'extra' | 'paid' | 'unpaid' | 'sub_off' | 'holiday' | 'f
 
 interface CalendarDay { day: number | null; type: DayType; label?: string }
 
+/** 指定年月の第nth曜日(dow)の日付を返す。dow: 0=日, 1=月, ..., 6=土 */
+function nthWeekday(year: number, month: number, nth: number, dow: number): number {
+  const firstDow = new Date(year, month - 1, 1).getDay();
+  return 1 + ((dow - firstDow + 7) % 7) + 7 * (nth - 1);
+}
+
 function buildCalendar(entry: ConfirmEntry): CalendarDay[] {
   const { year, month, kintai } = entry;
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -52,25 +58,28 @@ function buildCalendar(entry: ConfirmEntry): CalendarDay[] {
   const firstDow = new Date(year, month - 1, 1).getDay();
   const startDow = (firstDow + 6) % 7; // 0=月〜6=日
 
-  // 日本の祝日（簡易: APIから取得できないため概算）
+  // 日本の祝日（移動祝日はnthWeekdayで正確に計算）
   const holidayMap: Record<number, string> = {};
-  if (month === 1)  { holidayMap[1] = '元日'; holidayMap[13] = '成人の日'; }
+  if (month === 1)  { holidayMap[1] = '元日'; holidayMap[nthWeekday(year, 1, 2, 1)] = '成人の日'; }
   if (month === 2)  { holidayMap[11] = '建国記念の日'; holidayMap[23] = '天皇誕生日'; }
   if (month === 3)  { holidayMap[20] = '春分の日'; }
   if (month === 4)  { holidayMap[29] = '昭和の日'; }
   if (month === 5)  { holidayMap[3] = '憲法記念日'; holidayMap[4] = 'みどりの日'; holidayMap[5] = 'こどもの日'; }
-  if (month === 7)  { holidayMap[21] = '海の日'; }
+  if (month === 7)  { holidayMap[nthWeekday(year, 7, 3, 1)] = '海の日'; }
   if (month === 8)  { holidayMap[11] = '山の日'; }
-  if (month === 9)  { holidayMap[15] = '敬老の日'; holidayMap[23] = '秋分の日'; }
-  if (month === 10) { holidayMap[13] = 'スポーツの日'; }
+  if (month === 9)  { holidayMap[nthWeekday(year, 9, 3, 1)] = '敬老の日'; holidayMap[23] = '秋分の日'; }
+  if (month === 10) { holidayMap[nthWeekday(year, 10, 2, 1)] = 'スポーツの日'; }
   if (month === 11) { holidayMap[3] = '文化の日'; holidayMap[23] = '勤労感謝の日'; }
 
   const extraSet = new Set(
     (kintai?.extraWorkDays ?? []).map((d) => Number(d.split('-')[2])),
   );
-  const absentMap = new Map<number, AbsentRecord>(
-    (kintai?.absentRecords ?? []).map((r) => [Number(r.date.split('-')[2]), r]),
-  );
+  // 同日に複数レコードがある場合は最初のものを優先（first-wins）
+  const absentMap = new Map<number, AbsentRecord>();
+  for (const r of (kintai?.absentRecords ?? [])) {
+    const day = Number(r.date.split('-')[2]);
+    if (!absentMap.has(day)) absentMap.set(day, r);
+  }
 
   const days: CalendarDay[] = [];
   for (let i = 0; i < startDow; i++) days.push({ day: null, type: 'empty' });
@@ -151,7 +160,7 @@ function formatDateTime(iso: string): string {
 
 // ── ミニカレンダー ────────────────────────────────────────────────────
 
-function MiniCalendar({ days }: { days: CalendarDay[] }) {
+const MiniCalendar = memo(function MiniCalendar({ days }: { days: CalendarDay[] }) {
   const DOW_LABELS = ['月', '火', '水', '木', '金', '土', '日'];
   const weeks: CalendarDay[][] = [];
   for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
@@ -197,7 +206,7 @@ function MiniCalendar({ days }: { days: CalendarDay[] }) {
       </div>
     </div>
   );
-}
+});
 
 // ── ドクターカード ────────────────────────────────────────────────────
 
@@ -211,7 +220,7 @@ function isEarlyConfirm(confirmedAt: string, year: number, month: number): boole
   return jstYear === year && jstMonth === month && jstDay <= 15;
 }
 
-function DoctorCard({
+const DoctorCard = memo(function DoctorCard({
   entry, isOpen, onToggle, onCsvDownload, isDownloading,
 }: {
   entry: ConfirmEntry;
@@ -222,74 +231,84 @@ function DoctorCard({
 }) {
   const { summary, kintai, sentAt } = entry;
   const earlyConfirm = !sentAt && isEarlyConfirm(entry.confirmedAt, entry.year, entry.month);
-  const calendarDays = isOpen ? buildCalendar(entry) : [];
 
-  // 特記事項: extraWorkDays + absentRecords
-  const events: { date: string; type: string; label: string }[] = [];
-  if (kintai) {
+  const calendarDays = useMemo(
+    () => (isOpen ? buildCalendar(entry) : []),
+    [isOpen, entry],
+  );
+
+  const events = useMemo(() => {
+    if (!kintai) return [];
+    const out: { date: string; type: string; label: string }[] = [];
     for (const d of kintai.extraWorkDays) {
-      const mmdd = d.slice(5).replace('-', '/');
-      events.push({ date: mmdd, type: 'extra', label: '振替出勤（休日出勤）' });
+      out.push({ date: d.slice(5).replace('-', '/'), type: 'extra', label: '振替出勤（休日出勤）' });
     }
     for (const r of kintai.absentRecords) {
-      const mmdd = r.date.slice(5).replace('-', '/');
-      events.push({ date: mmdd, type: r.type, label: r.type + (r.name ? `（${r.name}）` : '') });
+      out.push({ date: r.date.slice(5).replace('-', '/'), type: r.type, label: r.type + (r.name ? `（${r.name}）` : '') });
     }
-    events.sort((a, b) => a.date.localeCompare(b.date));
-  }
+    return out.sort((a, b) => a.date.localeCompare(b.date));
+  }, [kintai]);
+
+  const panelId = `doctor-panel-${entry.empId}`;
 
   return (
     <div className={`border rounded-xl overflow-hidden transition-all ${isOpen ? 'border-indigo-300 shadow-md' : 'border-gray-200'}`}>
-      {/* ヘッダー行 */}
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
-      >
-        <span className={`text-gray-400 text-sm transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-90' : ''}`}>▶</span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-gray-800">{entry.empName}</span>
-            <span className="text-xs text-gray-400">ID: {entry.empId}</span>
-            {/* 送信済みバッジ (A) */}
-            {sentAt ? (
-              <span className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5 font-medium">
-                📧 送信済み {formatDateTime(sentAt)}
-              </span>
-            ) : (
-              <span className="text-xs text-gray-400">確定: {formatDateTime(entry.confirmedAt)}</span>
-            )}
-            {/* 月前半確定の警告 (C) */}
-            {earlyConfirm && (
-              <span className="flex items-center gap-1 text-xs bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2 py-0.5">
-                ⚠️ 月前半確定 — 変更の可能性あり
-              </span>
+      {/* ヘッダー行: ボタン入れ子を解消しトグルとCSVを独立したボタンに分割 */}
+      <div className="flex items-center bg-white hover:bg-gray-50 transition-colors">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-controls={panelId}
+          className="flex flex-1 items-center gap-3 px-4 py-3 text-left min-w-0"
+        >
+          <span aria-hidden="true" className={`text-gray-400 text-sm transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-90' : ''}`}>▶</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-gray-800">{entry.empName}</span>
+              <span className="text-xs text-gray-400">ID: {entry.empId}</span>
+              {sentAt ? (
+                <span className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5 font-medium">
+                  <span aria-hidden="true">📧</span> 送信済み {formatDateTime(sentAt)}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400">確定: {formatDateTime(entry.confirmedAt)}</span>
+              )}
+              {earlyConfirm && (
+                <span className="flex items-center gap-1 text-xs bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2 py-0.5">
+                  <span aria-hidden="true">⚠️</span> 月前半確定 — 変更の可能性あり
+                </span>
+              )}
+            </div>
+            {summary && (
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs">
+                <span className="text-indigo-600">
+                  出勤 <strong>{summary.workDays}</strong>日
+                  {summary.extraDays > 0 && <span className="text-orange-500">（振替出勤 {summary.extraDays}日含む）</span>}
+                </span>
+                {summary.absentPaid > 0   && <span className="text-emerald-600">有給 <strong>{summary.absentPaid}</strong>日</span>}
+                {summary.absentUnpaid > 0 && <span className="text-red-500">欠勤 <strong>{summary.absentUnpaid}</strong>日</span>}
+                {summary.absentSub > 0    && <span className="text-purple-600">振替休日 <strong>{summary.absentSub}</strong>日</span>}
+              </div>
             )}
           </div>
-          {summary && (
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs">
-              <span className="text-indigo-600">
-                出勤 <strong>{summary.workDays}</strong>日
-                {summary.extraDays > 0 && <span className="text-orange-500">（振替出勤 {summary.extraDays}日含む）</span>}
-              </span>
-              {summary.absentPaid > 0   && <span className="text-emerald-600">有給 <strong>{summary.absentPaid}</strong>日</span>}
-              {summary.absentUnpaid > 0 && <span className="text-red-500">欠勤 <strong>{summary.absentUnpaid}</strong>日</span>}
-              {summary.absentSub > 0    && <span className="text-purple-600">振替休日 <strong>{summary.absentSub}</strong>日</span>}
-            </div>
-          )}
-        </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); onCsvDownload(); }}
-          disabled={isDownloading}
-          className="flex-shrink-0 flex items-center gap-1 text-xs bg-white text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 disabled:opacity-50 transition-colors font-medium"
-        >
-          {isDownloading ? <span className="animate-spin inline-block">⟳</span> : <span>⬇</span>}
-          CSV
         </button>
-      </button>
+        <div className="flex-shrink-0 pr-4">
+          <button
+            type="button"
+            onClick={onCsvDownload}
+            disabled={isDownloading}
+            className="flex items-center gap-1 text-xs bg-white text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 disabled:opacity-50 transition-colors font-medium"
+          >
+            {isDownloading ? <span aria-hidden="true" className="animate-spin inline-block">⟳</span> : <span aria-hidden="true">⬇</span>}
+            CSV
+          </button>
+        </div>
+      </div>
 
       {/* 展開エリア */}
       {isOpen && (
-        <div className="border-t border-gray-100 bg-gray-50 px-4 py-4 space-y-5">
+        <div id={panelId} className="border-t border-gray-100 bg-gray-50 px-4 py-4 space-y-5">
           {/* カレンダー */}
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -305,7 +324,7 @@ function DoctorCard({
               <div className="space-y-1.5">
                 {events.map((ev, i) => (
                   <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${eventBadgeClass(ev.type)}`}>
-                    <span>{eventIcon(ev.type)}</span>
+                    <span aria-hidden="true">{eventIcon(ev.type)}</span>
                     <span className="font-semibold">{ev.date}</span>
                     <span>{ev.label}</span>
                   </div>
@@ -321,7 +340,7 @@ function DoctorCard({
       )}
     </div>
   );
-}
+});
 
 // ── メインページ ──────────────────────────────────────────────────────
 
@@ -344,6 +363,7 @@ export default function AdminPage() {
   const [customDoctors, setCustomDoctors] = useState<DoctorItem[]>(DOCTOR_LIST);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [savingDoctors, setSavingDoctors] = useState(false);
+  const [doctorSaveError, setDoctorSaveError] = useState<string>('');
   const [isManagingDoctors, setIsManagingDoctors] = useState(false);
   const [editDoctorIdx, setEditDoctorIdx] = useState<number | null>(null);
   const [editDoctorForm, setEditDoctorForm] = useState({ id: '', name: '' });
@@ -352,33 +372,7 @@ export default function AdminPage() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // セッションストレージからキーを復元
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = sessionStorage.getItem('admin_key');
-    if (stored) {
-      setAdminKey(stored);
-      setIsAuthenticated(true);
-    } else {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, []);
-
-  // 認証後にKVからDrリストを取得
-  useEffect(() => {
-    if (!isAuthenticated || !adminKey) return;
-    setLoadingDoctors(true);
-    fetch('/api/admin?action=doctors', { headers: { 'X-Admin-Key': adminKey } })
-      .then((r) => r.json())
-      .then((data: unknown) => {
-        const d = data as { doctors?: DoctorItem[] };
-        if (d.doctors) setCustomDoctors(d.doctors);
-      })
-      .catch(() => { /* デフォルトのまま */ })
-      .finally(() => setLoadingDoctors(false));
-  }, [isAuthenticated, adminKey]);
-
-  // 月一覧を取得
+  // 月一覧を取得（セッション復元時に使用）
   const fetchMonths = useCallback(async (key: string) => {
     setLoadingMonths(true);
     setError('');
@@ -390,7 +384,7 @@ export default function AdminPage() {
         setIsAuthenticated(false);
         setAdminKey('');
         sessionStorage.removeItem('admin_key');
-        setAuthError('パスワードが正しくありません。');
+        setAuthError('セッションが切れました。再度ログインしてください。');
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -405,9 +399,33 @@ export default function AdminPage() {
     }
   }, []);
 
+  // セッションストレージからキーを復元し、月一覧を取得
   useEffect(() => {
-    if (isAuthenticated && adminKey) fetchMonths(adminKey);
-  }, [isAuthenticated, adminKey, fetchMonths]);
+    if (typeof window === 'undefined') return;
+    const stored = sessionStorage.getItem('admin_key');
+    if (stored) {
+      setAdminKey(stored);
+      setIsAuthenticated(true);
+      fetchMonths(stored);
+    } else {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 認証後にKVからDrリストを取得
+  useEffect(() => {
+    if (!isAuthenticated || !adminKey) return;
+    setLoadingDoctors(true);
+    fetch('/api/admin?action=doctors', { headers: { 'X-Admin-Key': adminKey } })
+      .then((r) => r.json())
+      .then((data: unknown) => {
+        const d = data as { doctors?: DoctorItem[] };
+        if (d.doctors) setCustomDoctors(d.doctors);
+      })
+      .catch((err) => { console.error('Dr一覧の取得に失敗しました:', err); })
+      .finally(() => setLoadingDoctors(false));
+  }, [isAuthenticated, adminKey]);
 
   // 選択月の提出状況を取得
   useEffect(() => {
@@ -424,6 +442,15 @@ export default function AdminPage() {
           `/api/admin?action=status&year=${year}&month=${month}`,
           { headers: { 'X-Admin-Key': adminKey } },
         );
+        if (res.status === 401) {
+          if (!cancelled) {
+            setIsAuthenticated(false);
+            setAdminKey('');
+            sessionStorage.removeItem('admin_key');
+            setAuthError('セッションが切れました。再度ログインしてください。');
+          }
+          return;
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as StatusData;
         if (!cancelled) setStatusData(data);
@@ -441,6 +468,7 @@ export default function AdminPage() {
 
   const saveDoctors = useCallback(async (doctors: DoctorItem[]) => {
     setSavingDoctors(true);
+    setDoctorSaveError('');
     try {
       const res = await fetch('/api/admin?action=saveDoctors', {
         method: 'POST',
@@ -450,7 +478,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setCustomDoctors(doctors);
     } catch {
-      alert('保存に失敗しました。再度お試しください。');
+      setDoctorSaveError('保存に失敗しました。再度お試しください。');
     } finally {
       setSavingDoctors(false);
     }
@@ -491,13 +519,32 @@ export default function AdminPage() {
 
   // ── ログイン / ログアウト ───────────────────────────────────────────
 
-  const handleLogin = useCallback(() => {
+  const handleLogin = useCallback(async () => {
     const key = inputKey.trim();
     if (!key) return;
     setAuthError('');
-    setAdminKey(key);
-    sessionStorage.setItem('admin_key', key);
-    setIsAuthenticated(true);
+    setLoadingMonths(true);
+    try {
+      const res = await fetch('/api/admin?action=months', {
+        headers: { 'X-Admin-Key': key },
+      });
+      if (res.status === 401) {
+        setAuthError('パスワードが正しくありません。');
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { months: string[] };
+      const list = data.months ?? [];
+      setMonths(list);
+      if (list.length > 0) setSelectedMonth(list[0]);
+      sessionStorage.setItem('admin_key', key);
+      setAdminKey(key);
+      setIsAuthenticated(true);
+    } catch {
+      setAuthError('接続に失敗しました。再度お試しください。');
+    } finally {
+      setLoadingMonths(false);
+    }
   }, [inputKey]);
 
   const handleLogout = () => {
@@ -563,8 +610,8 @@ export default function AdminPage() {
             <p className="text-sm text-gray-400 mt-1">医療法人社団スター歯科クリニック</p>
           </div>
           {authError && (
-            <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl p-3 mb-4 flex items-center gap-2">
-              <span>⚠️</span><span>{authError}</span>
+            <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl p-3 mb-4 flex items-center gap-2" role="alert">
+              <span aria-hidden="true">⚠️</span><span>{authError}</span>
             </div>
           )}
           <div className="space-y-3">
@@ -588,7 +635,7 @@ export default function AdminPage() {
               ログイン
             </button>
           </div>
-          <p className="text-center text-xs text-gray-300 mt-6">事務専用管理画面</p>
+          <p className="text-center text-xs text-gray-400 mt-6">事務専用管理画面</p>
         </div>
       </div>
     );
@@ -630,7 +677,7 @@ export default function AdminPage() {
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left"
           >
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-700">⚙ Dr一覧管理</span>
+              <span className="text-sm font-semibold text-gray-700"><span aria-hidden="true">⚙</span> Dr一覧管理</span>
               {loadingDoctors
                 ? <span className="text-xs text-gray-400 animate-pulse">読み込み中...</span>
                 : <span className="text-xs text-gray-400">{customDoctors.length}名</span>
@@ -755,6 +802,21 @@ export default function AdminPage() {
               >
                 初期設定に戻す
               </button>
+
+              {/* 保存エラー表示 */}
+              {doctorSaveError && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-xs rounded-xl px-3 py-2">
+                  <span aria-hidden="true">⚠️</span>
+                  <span>{doctorSaveError}</span>
+                  <button
+                    onClick={() => setDoctorSaveError('')}
+                    className="ml-auto text-red-400 hover:text-red-600"
+                    aria-label="エラーを閉じる"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -834,7 +896,15 @@ export default function AdminPage() {
                 {[...Array(5)].map((_, i) => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}
               </div>
             ) : error ? (
-              <div className="text-center py-6 text-red-500 text-sm">{error}</div>
+              <div className="text-center py-6 space-y-3">
+                <p className="text-red-500 text-sm">{error}</p>
+                <button
+                  onClick={() => setSelectedMonth((m) => m)}
+                  className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-4 py-2 hover:bg-indigo-50 transition-colors"
+                >
+                  再読み込み
+                </button>
+              </div>
             ) : statusData ? (
               <div className="space-y-5">
                 {/* プログレスバー */}
@@ -855,7 +925,7 @@ export default function AdminPage() {
                 {statusData.confirmed.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2.5">
-                      <span className="text-sm font-semibold text-emerald-700">✅ 確定済み</span>
+                      <span className="text-sm font-semibold text-emerald-700"><span aria-hidden="true">✅</span> 確定済み</span>
                       <span className="bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full px-2 py-0.5">
                         {statusData.confirmed.length}名
                       </span>
@@ -879,7 +949,7 @@ export default function AdminPage() {
                 {notConfirmedList.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2.5">
-                      <span className="text-sm font-semibold text-gray-500">⏳ 未提出</span>
+                      <span className="text-sm font-semibold text-gray-500"><span aria-hidden="true">⏳</span> 未提出</span>
                       <span className="bg-gray-100 text-gray-500 text-xs font-bold rounded-full px-2 py-0.5">
                         {notConfirmedList.length}名
                       </span>
