@@ -821,61 +821,89 @@ export default function AdminPage() {
           )}
         </section>
 
-        {/* ガイド・リンク */}
-        <section className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ガイド・リンク</p>
-
-          <div className="grid sm:grid-cols-2 gap-2">
-            <a
-              href="https://diagram-kintai-admin-guide.surge.sh"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2.5 p-3 rounded-xl border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 transition-colors group"
-            >
-              <span className="w-8 h-8 bg-indigo-200 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-300 transition-colors" aria-hidden="true">
-                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              </span>
-              <div>
-                <p className="text-xs font-bold text-indigo-800">ダッシュボードの使い方</p>
-                <p className="text-[10px] text-indigo-500">自動送信の仕組み・Dr管理</p>
-              </div>
-            </a>
-
-            <a
-              href="https://diagram-kintai-guide.surge.sh"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2.5 p-3 rounded-xl border border-emerald-100 bg-emerald-50 hover:bg-emerald-100 transition-colors group"
-            >
-              <span className="w-8 h-8 bg-emerald-200 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-300 transition-colors" aria-hidden="true">
-                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-              </span>
-              <div>
-                <p className="text-xs font-bold text-emerald-800">Dr向けアプリの使い方</p>
-                <p className="text-[10px] text-emerald-500">新人Drへの案内用</p>
-              </div>
-            </a>
-          </div>
-
-          {/* 新人Dr向け案内テンプレート */}
-          <div className="border border-amber-200 bg-amber-50 rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2.5 bg-amber-100">
+        {/* ガイド・リンク（アコーディオン） */}
+        <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <details className="group">
+            <summary className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors select-none list-none">
               <div className="flex items-center gap-2">
-                <span aria-hidden="true">📋</span>
-                <p className="text-xs font-bold text-amber-800">新人Dr向け案内文（コピペ用）</p>
+                <span aria-hidden="true">📖</span>
+                <span className="text-sm font-semibold text-gray-700">ガイド・リンク</span>
               </div>
-              <button
-                onClick={() => {
-                  const text = `【勤怠管理アプリの設定をお願いします】
+              <span className="text-gray-400 text-sm transition-transform duration-200 group-open:rotate-180">▼</span>
+            </summary>
+            <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+
+              <div className="grid sm:grid-cols-2 gap-2">
+                <a
+                  href="https://diagram-kintai-admin-guide.surge.sh"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 p-3 rounded-xl border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 transition-colors group"
+                >
+                  <span className="w-8 h-8 bg-indigo-200 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-300 transition-colors" aria-hidden="true">
+                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-indigo-800">ダッシュボードの使い方</p>
+                    <p className="text-[10px] text-indigo-500">自動送信の仕組み・Dr管理</p>
+                  </div>
+                </a>
+
+                <a
+                  href="https://diagram-kintai-guide.surge.sh"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 p-3 rounded-xl border border-emerald-100 bg-emerald-50 hover:bg-emerald-100 transition-colors group"
+                >
+                  <span className="w-8 h-8 bg-emerald-200 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-300 transition-colors" aria-hidden="true">
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-emerald-800">Dr向けアプリの使い方</p>
+                    <p className="text-[10px] text-emerald-500">新人Drへの案内用</p>
+                  </div>
+                </a>
+              </div>
+
+              {/* アプリURL */}
+              <div className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 bg-gray-50">
+                <span className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-gray-700">アプリURL</p>
+                  <p className="text-[10px] text-gray-400 font-mono truncate">https://kintai-app-dyu.pages.dev</p>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('https://kintai-app-dyu.pages.dev');
+                    const btn = document.getElementById('copy-url-btn');
+                    if (btn) { btn.textContent = 'コピー済み'; setTimeout(() => { btn.textContent = 'コピー'; }, 2000); }
+                  }}
+                  id="copy-url-btn"
+                  className="text-xs bg-white text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 hover:border-gray-300 transition-colors font-medium flex-shrink-0"
+                >
+                  コピー
+                </button>
+              </div>
+
+              {/* 新人Dr向け案内テンプレート */}
+              <div className="border border-amber-200 bg-amber-50 rounded-xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-amber-100">
+                  <div className="flex items-center gap-2">
+                    <span aria-hidden="true">📋</span>
+                    <p className="text-xs font-bold text-amber-800">新人Dr向け案内文（コピペ用）</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const text = `【勤怠管理アプリの設定をお願いします】
 
 下記URLをスマホのブラウザ（Safari または Chrome）で開いてください。
-
-▼ アプリURL
 https://kintai-app-dyu.pages.dev
 
 ■ ホーム画面への追加（必ず行ってください）
-iPhone（Safari）：画面下の共有ボタン → 「ホーム画面に追加」
-Android（Chrome）：右上の「︙」→ 「ホーム画面に追加」
+Safari：共有ボタン → 「ホーム画面に追加」
+Chrome：右上の「︙」→ 「ホーム画面に追加」
 
 ■ 初回設定（最初に必ず行ってください）
 1. アプリを開き、自分の名前を選択
@@ -883,32 +911,26 @@ Android（Chrome）：右上の「︙」→ 「ホーム画面に追加」
 3. 定休日を設定（日曜＋もう1日の休みの曜日を選択）
 
 設定は以上です。毎月の使い方は下記ガイドをご確認ください。
-
-▼ アプリの使い方ガイド
-https://diagram-kintai-guide.surge.sh
-
-不明点はDr.生野に聞いてください。`;
-                  navigator.clipboard.writeText(text);
-                  const btn = document.getElementById('copy-onboard-btn');
-                  if (btn) { btn.textContent = 'コピー済み!'; setTimeout(() => { btn.textContent = 'コピー'; }, 2000); }
-                }}
-                id="copy-onboard-btn"
-                className="text-xs bg-white text-amber-700 border border-amber-300 rounded-lg px-3 py-1.5 hover:bg-amber-50 hover:border-amber-400 transition-colors font-bold flex-shrink-0"
-              >
-                コピー
-              </button>
-            </div>
-            <div className="px-4 py-3">
-              <pre className="text-[11px] text-gray-600 whitespace-pre-wrap leading-relaxed font-sans">{`【勤怠管理アプリの設定をお願いします】
+https://diagram-kintai-guide.surge.sh`;
+                      navigator.clipboard.writeText(text);
+                      const btn = document.getElementById('copy-onboard-btn');
+                      if (btn) { btn.textContent = 'コピー済み!'; setTimeout(() => { btn.textContent = 'コピー'; }, 2000); }
+                    }}
+                    id="copy-onboard-btn"
+                    className="text-xs bg-white text-amber-700 border border-amber-300 rounded-lg px-3 py-1.5 hover:bg-amber-50 hover:border-amber-400 transition-colors font-bold flex-shrink-0"
+                  >
+                    コピー
+                  </button>
+                </div>
+                <div className="px-4 py-3">
+                  <pre className="text-[11px] text-gray-600 whitespace-pre-wrap leading-relaxed font-sans">{`【勤怠管理アプリの設定をお願いします】
 
 下記URLをスマホのブラウザ（Safari または Chrome）で開いてください。
-
-▼ アプリURL
 https://kintai-app-dyu.pages.dev
 
 ■ ホーム画面への追加（必ず行ってください）
-iPhone（Safari）：画面下の共有ボタン → 「ホーム画面に追加」
-Android（Chrome）：右上の「︙」→ 「ホーム画面に追加」
+Safari：共有ボタン → 「ホーム画面に追加」
+Chrome：右上の「︙」→ 「ホーム画面に追加」
 
 ■ 初回設定（最初に必ず行ってください）
 1. アプリを開き、自分の名前を選択
@@ -916,13 +938,12 @@ Android（Chrome）：右上の「︙」→ 「ホーム画面に追加」
 3. 定休日を設定（日曜＋もう1日の休みの曜日を選択）
 
 設定は以上です。毎月の使い方は下記ガイドをご確認ください。
+https://diagram-kintai-guide.surge.sh`}</pre>
+                </div>
+              </div>
 
-▼ アプリの使い方ガイド
-https://diagram-kintai-guide.surge.sh
-
-不明点はDr.生野に聞いてください。`}</pre>
             </div>
-          </div>
+          </details>
         </section>
 
         {/* 月選択 */}
