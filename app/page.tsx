@@ -496,8 +496,8 @@ export default function Home() {
         })()}
 
         {/* 対象月バナー */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+          <div className="flex items-center justify-center gap-4 mb-2">
             <button
               onClick={() => {
                 if (month === 1) { setYear(year - 1); setMonth(12); }
@@ -508,12 +508,9 @@ export default function Home() {
             >
               <i className="fa-solid fa-chevron-left text-sm" aria-hidden="true" />
             </button>
-            <div className="text-center">
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mb-0.5">対象月</p>
-              <p className="text-2xl font-black text-slate-900 dark:text-white">
-                {year}年<span className="text-brand-500">{month}月</span>分
-              </p>
-            </div>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">
+              {year}年<span className="text-brand-500">{month}月</span>分
+            </p>
             <button
               onClick={() => {
                 if (month === 12) { setYear(year + 1); setMonth(1); }
@@ -525,11 +522,9 @@ export default function Home() {
               <i className="fa-solid fa-chevron-right text-sm" aria-hidden="true" />
             </button>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium">
-              定休日: 日曜 + {WEEK_DAYS_JA[weekdayHoliday]}曜
-            </p>
-          </div>
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+            定休日: 日 + {WEEK_DAYS_JA[weekdayHoliday]}
+          </p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition hover:shadow-md">
