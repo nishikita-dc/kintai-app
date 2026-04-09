@@ -97,7 +97,8 @@ export function useSchedule({
 
   // タップでステータスをサイクル切替
   // 通常出勤日: 通常 → 有給 → 欠勤 → 振替休日 → 通常（削除）
-  // 休日/祝日:  休み → 振替出勤 → 休み
+  // 定休曜日:   定休日 → 祝日週出勤 → 休日出勤 → 定休日
+  // 祝日:       祝日 → 休日出勤 → 祝日
   const ABSENT_CYCLE: AbsentRecord['type'][] = ['有給', '欠勤', '振替休日'];
 
   const toggleDateStatus = useCallback(
@@ -109,22 +110,41 @@ export function useSchedule({
       const absentRec = absentRecords.find((r) => r.date === dateStr);
       const isHoliday = holidays.includes(dayOfWeek);
       const isNationalHoliday = !!yearHolidays[dateStr];
-      const isOffDay = isHoliday || isNationalHoliday;
 
-      // ── 休日/祝日の場合: 休み ↔ 振替出勤 ──
-      if (isOffDay && !absentRec) {
-        if (isExtra) {
-          // 振替出勤 → 休みに戻す
-          setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
-        } else {
-          // 休み → 振替出勤
+      // ── 祝日の場合: 祝日 → 休日出勤 → 祝日 ──
+      if (absentRec?.type === '祝日') {
+        // 祝日 → 休日出勤（extraに追加、absentから祝日を削除）
+        setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
+        setExtraWorkDays((prev) => [...prev, dateStr].sort());
+        return;
+      }
+
+      // ── 定休曜日の場合（祝日でない）: 定休日 → 祝日週出勤 → 休日出勤 → 定休日 ──
+      if (isHoliday && !isNationalHoliday && !absentRec) {
+        if (!isExtra) {
+          // 定休日 → 祝日週出勤（extraに追加）
+          // ※表示上の区別はCalendarView/ExceptionEditorが weekdayHoliday で判定
           setExtraWorkDays((prev) => [...prev, dateStr].sort());
+        } else {
+          // 既にextra（祝日週出勤 or 休日出勤）→ 定休日に戻す
+          setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
         }
         return;
       }
 
+      // ── 祝日だった日が休日出勤になっている場合: 休日出勤 → 祝日に戻す ──
+      if (isExtra && isNationalHoliday) {
+        setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
+        const holidayName = yearHolidays[dateStr];
+        setAbsentRecords((prev) =>
+          [...prev, { date: dateStr, type: '祝日' as const, name: holidayName }].sort((a, b) =>
+            a.date.localeCompare(b.date),
+          ),
+        );
+        return;
+      }
+
       // ── 通常出勤日の場合: サイクル切替 ──
-      // 振替出勤中に休みタイプに切り替える場合はextraを解除
       if (isExtra) {
         setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
       }
@@ -136,23 +156,18 @@ export function useSchedule({
             a.date.localeCompare(b.date),
           ),
         );
-      } else if (absentRec.type === '祝日') {
-        // 祝日は変更しない（振替出勤への切替は上で処理済み）
-        return;
       } else {
         // 有給 → 欠勤 → 振替休日 → 通常（削除）
         const currentIdx = ABSENT_CYCLE.indexOf(absentRec.type);
         const nextIdx = currentIdx + 1;
 
         if (nextIdx < ABSENT_CYCLE.length) {
-          // 次の休みタイプに変更
           setAbsentRecords((prev) =>
             prev.map((r) =>
               r.date === dateStr ? { ...r, type: ABSENT_CYCLE[nextIdx] } : r,
             ),
           );
         } else {
-          // サイクル終了 → 通常に戻す（削除）
           setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
         }
       }
