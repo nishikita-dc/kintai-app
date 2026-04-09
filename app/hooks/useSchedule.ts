@@ -95,6 +95,11 @@ export function useSchedule({
     setTimeChanges([]);
   }, [year, month, weekdayHoliday, enableSubstituteWork, isInitialized]);
 
+  // タップでステータスをサイクル切替
+  // 通常出勤日: 通常 → 有給 → 欠勤 → 振替休日 → 通常（削除）
+  // 休日/祝日:  休み → 振替出勤 → 休み
+  const ABSENT_CYCLE: AbsentRecord['type'][] = ['有給', '欠勤', '振替休日'];
+
   const toggleDateStatus = useCallback(
     (dateStr: string) => {
       const dateYear = parseInt(dateStr.slice(0, 4), 10);
@@ -104,22 +109,51 @@ export function useSchedule({
       const absentRec = absentRecords.find((r) => r.date === dateStr);
       const isHoliday = holidays.includes(dayOfWeek);
       const isNationalHoliday = !!yearHolidays[dateStr];
-      const currentlyOff = !!absentRec || (!isExtra && (isHoliday || isNationalHoliday));
+      const isOffDay = isHoliday || isNationalHoliday;
 
-      if (currentlyOff) {
-        if (absentRec) setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
-        if ((isHoliday || isNationalHoliday) && !isExtra) {
-          setExtraWorkDays((prev) => [...prev, dateStr].sort());
-        }
-      } else {
+      // ── 休日/祝日の場合: 休み ↔ 振替出勤 ──
+      if (isOffDay && !absentRec) {
         if (isExtra) {
+          // 振替出勤 → 休みに戻す
           setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
         } else {
+          // 休み → 振替出勤
+          setExtraWorkDays((prev) => [...prev, dateStr].sort());
+        }
+        return;
+      }
+
+      // ── 通常出勤日の場合: サイクル切替 ──
+      // 振替出勤中に休みタイプに切り替える場合はextraを解除
+      if (isExtra) {
+        setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
+      }
+
+      if (!absentRec) {
+        // 通常 → 有給
+        setAbsentRecords((prev) =>
+          [...prev, { date: dateStr, type: '有給' as const }].sort((a, b) =>
+            a.date.localeCompare(b.date),
+          ),
+        );
+      } else if (absentRec.type === '祝日') {
+        // 祝日は変更しない（振替出勤への切替は上で処理済み）
+        return;
+      } else {
+        // 有給 → 欠勤 → 振替休日 → 通常（削除）
+        const currentIdx = ABSENT_CYCLE.indexOf(absentRec.type);
+        const nextIdx = currentIdx + 1;
+
+        if (nextIdx < ABSENT_CYCLE.length) {
+          // 次の休みタイプに変更
           setAbsentRecords((prev) =>
-            [...prev, { date: dateStr, type: '有給' as const }].sort((a, b) =>
-              a.date.localeCompare(b.date),
+            prev.map((r) =>
+              r.date === dateStr ? { ...r, type: ABSENT_CYCLE[nextIdx] } : r,
             ),
           );
+        } else {
+          // サイクル終了 → 通常に戻す（削除）
+          setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
         }
       }
     },
