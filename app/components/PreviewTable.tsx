@@ -167,16 +167,16 @@ export default function PreviewTable({
       </div>
 
       {/* モバイルカード */}
-      <div className="sm:hidden space-y-2 max-h-96 overflow-y-auto mb-6 pr-1">
+      <div className="sm:hidden space-y-2 max-h-[60vh] overflow-y-auto mb-6 pr-1">
         {previewData.map((row, idx) => (
           <div
             key={idx}
-            className={`rounded-xl p-3 border animation-slide-up ${
+            className={`rounded-xl p-3 border ${idx < 6 ? 'animation-slide-up' : ''} ${
               row.type !== '通常'
                 ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800'
                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
             }`}
-            style={{ animationDelay: `${idx * 20}ms` }}
+            style={idx < 6 ? { animationDelay: `${idx * 40}ms` } : undefined}
           >
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
@@ -320,7 +320,7 @@ export default function PreviewTable({
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCancelDialog(false); }}
         >
-          <div ref={cancelDialogRef} role="dialog" aria-modal="true" aria-label="確定取消確認" className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+          <div ref={cancelDialogRef} role="dialog" aria-modal="true" aria-label="確定取消確認" className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200 dark:border-slate-700 animation-scale-in">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center border-4 border-orange-100">
                 <i className="fa-solid fa-rotate-left text-orange-500 text-xl" />

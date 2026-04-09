@@ -114,21 +114,21 @@ export default function ExceptionEditor({
       <div className="space-y-6">
         {/* お休み登録 */}
         <div>
-          <label className="flex items-center text-sm font-bold text-slate-700 mb-2">
+          <label className="flex items-center text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
             <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mr-2">
               <i className="fa-solid fa-umbrella-beach" />
             </span>
             お休みリスト（祝日・有給・欠勤）
           </label>
 
-          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-3">
+          <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600 mb-3">
             <div className="mb-2">
               <span className="text-xs text-slate-500 block mb-1">日付</span>
               <input
                 type="date"
                 value={tempAbsentDate}
                 onChange={(e) => { setTempAbsentDate(e.target.value); setAbsentError(null); }}
-                className="w-full rounded border-slate-300 p-1.5 text-sm border outline-none"
+                className="w-full rounded border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 p-1.5 text-sm border outline-none"
               />
             </div>
             <div className="mb-3">
@@ -144,7 +144,7 @@ export default function ExceptionEditor({
                           : type === '欠勤'
                             ? 'bg-red-500 text-white border-red-500'
                             : 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+                        : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'
                     }`}
                   >
                     <input
@@ -176,12 +176,12 @@ export default function ExceptionEditor({
 
           <div className="flex flex-col gap-2 min-h-[2rem]">
             {absentRecords.length === 0 && (
-              <span className="text-xs text-slate-300">登録なし</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">登録なし</span>
             )}
             {absentRecords.map((r) => (
               <div
                 key={r.date}
-                className="flex justify-between items-center bg-white border border-slate-200 text-xs px-2 py-1.5 rounded shadow-sm"
+                className="flex justify-between items-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-xs px-2 py-1.5 rounded shadow-sm"
               >
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-600">
@@ -223,7 +223,7 @@ export default function ExceptionEditor({
 
         {/* 休日出勤 */}
         <div className="pt-4 border-t border-slate-100">
-          <label className="flex items-center text-sm font-bold text-slate-700 mb-2">
+          <label className="flex items-center text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
             <span className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mr-2">
               <i className="fa-solid fa-briefcase" />
             </span>
@@ -251,12 +251,12 @@ export default function ExceptionEditor({
           )}
           <div className="flex flex-col gap-2">
             {extraWorkDays.length === 0 && (
-              <span className="text-xs text-slate-300">登録なし</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">登録なし</span>
             )}
             {extraWorkDays.map((d) => (
               <div
                 key={d}
-                className="flex justify-between items-center bg-white border border-orange-200 text-xs px-2 py-1.5 rounded shadow-sm"
+                className="flex justify-between items-center bg-white dark:bg-slate-700 border border-orange-200 dark:border-orange-800 text-xs px-2 py-1.5 rounded shadow-sm"
               >
                 <span className="font-bold text-orange-800">
                   {d.slice(5)} <span className="text-orange-500">({getWeekDay(d)})</span>{' '}
@@ -276,7 +276,7 @@ export default function ExceptionEditor({
 
       {/* 右カラム：時間変更 */}
       <div className="border-t md:border-t-0 md:border-l border-slate-100 md:pl-8 pt-6 md:pt-0">
-        <label className="flex items-center text-sm font-bold text-slate-700 mb-2">
+        <label className="flex items-center text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
           <span className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mr-2">
             <i className="fa-solid fa-clock" />
           </span>
@@ -284,14 +284,14 @@ export default function ExceptionEditor({
           <span className="ml-2 text-xs font-normal text-slate-500">遅刻・早退・残業など</span>
         </label>
 
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-3">
+        <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600 mb-3">
           <div className="mb-2">
             <span className="text-xs text-slate-500 block mb-1">日付</span>
             <input
               type="date"
               value={tempChangeDate}
               onChange={(e) => { setTempChangeDate(e.target.value); setChangeError(null); }}
-              className="w-full rounded border-slate-300 p-1.5 text-sm border outline-none"
+              className="w-full rounded border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 p-1.5 text-sm border outline-none"
             />
           </div>
           <div className="flex items-end gap-2">
@@ -339,12 +339,12 @@ export default function ExceptionEditor({
 
         <div className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
           {timeChanges.length === 0 && (
-            <span className="text-xs text-slate-300">登録なし</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">登録なし</span>
           )}
           {timeChanges.map((c) => (
             <div
               key={c.date}
-              className="bg-white border border-purple-100 text-purple-800 text-xs p-2 rounded flex items-center justify-between shadow-sm"
+              className="bg-white dark:bg-slate-700 border border-purple-100 dark:border-purple-800 text-purple-800 dark:text-purple-300 text-xs p-2 rounded flex items-center justify-between shadow-sm"
             >
               <div className="flex items-center gap-2">
                 <span className="font-bold bg-purple-100 px-1.5 rounded">{c.date.slice(5)}</span>

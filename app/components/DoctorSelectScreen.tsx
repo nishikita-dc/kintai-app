@@ -41,13 +41,13 @@ export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps
               <i className="fa-solid fa-tooth text-brand-500 text-xs" />
             </div>
           </div>
-          <h1 className="text-2xl font-black text-slate-800 mb-1">勤怠管理アプリ</h1>
+          <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-1">勤怠管理アプリ</h1>
           <p className="text-sm text-slate-400 mb-6">医療法人社団 スター歯科クリニック</p>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-brand-200 px-5 py-3 inline-flex items-center gap-2 shadow-sm">
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-brand-200 dark:border-slate-600 px-5 py-3 inline-flex items-center gap-2 shadow-sm">
             <div className="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center">
               <i className="fa-solid fa-user-doctor text-brand-500 text-xs" />
             </div>
-            <p className="text-slate-700 font-bold text-sm">
+            <p className="text-slate-700 dark:text-slate-200 font-bold text-sm">
               {selectedId ? '読み込み中...' : 'ドクターを選択してください'}
             </p>
           </div>
@@ -69,8 +69,8 @@ export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps
                   ${isSelected
                     ? 'bg-gradient-to-br from-brand-500 to-amber-500 shadow-xl scale-[1.04] border-2 border-brand-400'
                     : isOther
-                      ? 'bg-white border border-slate-200 opacity-40 cursor-not-allowed'
-                      : 'bg-white border border-slate-200 hover:shadow-lg hover:border-brand-300 hover:-translate-y-0.5 active:scale-95 group'
+                      ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 opacity-40 cursor-not-allowed'
+                      : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-brand-300 hover:-translate-y-0.5 active:scale-95 group'
                   }
                 `}
               >
@@ -89,7 +89,7 @@ export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps
                   </div>
                   <div className="text-center min-w-0 w-full">
                     <p className={`font-bold truncate transition-colors duration-300 ${
-                      isSelected ? 'text-white' : 'text-slate-700 group-hover:text-brand-700'
+                      isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-brand-700'
                     }`}>
                       {doc.name}先生
                     </p>

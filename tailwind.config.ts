@@ -6,6 +6,7 @@ const config: Config = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './lib/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'media',
   theme: {
     extend: {
       colors: {
@@ -19,11 +20,14 @@ const config: Config = {
           600: '#EA580C',
           700: '#C2410C',
           800: '#9A3412',
+          900: '#7C2D12',
         },
+      },
+      animation: {
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },
-  darkMode: 'media',
   plugins: [],
 };
 

@@ -59,44 +59,44 @@ function CalendarView({
     const isNationalHoliday = !!JAPANESE_HOLIDAYS[dateStr];
 
     let statusLabel = '';
-    let bgColor = 'bg-white';
-    let textColor = 'text-slate-700';
+    let bgColor = 'bg-white dark:bg-slate-800';
+    let textColor = 'text-slate-700 dark:text-slate-200';
     let borderColor = 'border-slate-200';
 
     if (isExtra) {
       if (isNationalHoliday || isHoliday) {
         statusLabel = dayOfWeek === weekdayHoliday ? '振替出勤' : '休日出勤';
-        bgColor = 'bg-orange-50';
-        textColor = 'text-orange-700';
+        bgColor = 'bg-orange-50 dark:bg-orange-900/30';
+        textColor = 'text-orange-700 dark:text-orange-300';
         borderColor = 'border-orange-200';
       }
     } else if (absentRec) {
       statusLabel = absentRec.type;
       if (absentRec.type === '有給') {
-        bgColor = 'bg-emerald-50';
-        textColor = 'text-emerald-700';
+        bgColor = 'bg-emerald-50 dark:bg-emerald-900/30';
+        textColor = 'text-emerald-700 dark:text-emerald-300';
         borderColor = 'border-emerald-200';
       } else if (absentRec.type === '欠勤') {
-        bgColor = 'bg-red-50';
-        textColor = 'text-red-700';
+        bgColor = 'bg-red-50 dark:bg-red-900/30';
+        textColor = 'text-red-700 dark:text-red-300';
         borderColor = 'border-red-200';
       } else if (absentRec.type === '祝日') {
-        bgColor = 'bg-pink-50';
-        textColor = 'text-pink-700';
+        bgColor = 'bg-pink-50 dark:bg-pink-900/30';
+        textColor = 'text-pink-700 dark:text-pink-300';
         borderColor = 'border-pink-200';
       } else {
-        bgColor = 'bg-blue-50';
-        textColor = 'text-blue-700';
+        bgColor = 'bg-blue-50 dark:bg-blue-900/30';
+        textColor = 'text-blue-700 dark:text-blue-300';
         borderColor = 'border-blue-200';
       }
     } else if (isNationalHoliday) {
       statusLabel = '祝日';
-      bgColor = 'bg-pink-50';
-      textColor = 'text-pink-700';
+      bgColor = 'bg-pink-50 dark:bg-pink-900/30';
+      textColor = 'text-pink-700 dark:text-pink-300';
       borderColor = 'border-pink-200';
     } else if (isHoliday) {
       statusLabel = '定休日';
-      bgColor = 'bg-slate-100';
+      bgColor = 'bg-slate-100 dark:bg-slate-700/50';
       textColor = 'text-slate-400';
     }
 
@@ -110,7 +110,7 @@ function CalendarView({
         onClick={() => !disabled && onToggleDate(dateStr)}
         disabled={disabled}
         aria-label={ariaLabel}
-        className={`h-20 rounded-xl ${bgColor} dark:bg-opacity-20 p-1.5 transition-all relative group overflow-hidden text-left ripple ${isToday ? 'ring-2 ring-brand-400 ring-offset-1 dark:ring-offset-slate-900' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-brand-300 focus:outline-none active:scale-95'}`}
+        className={`h-20 rounded-xl ${bgColor} p-1.5 transition-all relative group overflow-hidden text-left ripple ${isToday ? 'ring-2 ring-brand-400 ring-offset-1 dark:ring-offset-slate-900' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-brand-300 focus:outline-none active:scale-95'}`}
       >
         <div className="flex justify-between items-start">
           <span

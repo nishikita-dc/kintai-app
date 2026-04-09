@@ -4,7 +4,7 @@ import type { ConfirmData } from '../../types';
 import { buildMonthlyEmailHtml, buildMonthlyEmailSubject } from '../../lib/emailTemplate';
 import type { SentRecord } from '../../types';
 import { kvConfirmKey, kvConfirmMonthPrefix, kvSentKey } from '../../lib/kvKeys';
-import { getCorsHeaders, authenticate, jsonResponse as jsonRes } from '../_shared/edgeHelpers';
+import { getCorsHeaders, authenticate, jsonResponse as jsonRes, isValidEmpId, isValidYearMonth } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -68,11 +68,19 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     // bodyなしの場合はデフォルトを使用
   }
 
+  if (targetEmpId && !isValidEmpId(targetEmpId)) {
+    return jsonRes({ error: 'empId の形式が不正です' }, cors, 400);
+  }
+
   if (!targetYear || !targetMonth) {
     const now = new Date();
     const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
     targetYear = jst.getUTCFullYear();
     targetMonth = jst.getUTCMonth() + 1;
+  }
+
+  if (!isValidYearMonth(targetYear, targetMonth)) {
+    return jsonRes({ error: 'year/month の値が不正です' }, cors, 400);
   }
 
   // empId 指定時は個別ドクターのみ、未指定時は全員分
@@ -168,7 +176,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     if (sgRes.status !== 202 && !sgRes.ok) {
       const errorBody = await sgRes.text();
-      return jsonRes({ error: 'メール送信に失敗しました', details: errorBody }, {}, 500);
+      return jsonRes({ error: 'メール送信に失敗しました', details: errorBody }, cors, 500);
     }
 
     // 送信成功後、各ドクターの sent: KV キーを記録
@@ -194,6 +202,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       sent: confirmedEntries.length,
     }, cors);
   } catch (err) {
-    return jsonRes({ error: 'メール送信中にエラーが発生しました', details: String(err) }, {}, 500);
+    return jsonRes({ error: 'メール送信中にエラーが発生しました', details: String(err) }, cors, 500);
   }
 };

@@ -134,6 +134,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (!isValidEmpId(empId as string)) {
       return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
     }
+    if (!isValidYearMonth(year as number, month as number)) {
+      return jsonResponse({ error: 'year/month の値が不正です' }, cors, 400);
+    }
 
     const key = kvConfirmKey(empId as string, year as number, month as number);
     await env.KINTAI_DATA.delete(key);

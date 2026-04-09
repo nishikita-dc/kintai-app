@@ -65,3 +65,15 @@ html {
   ::-webkit-scrollbar-thumb:hover { background: #64748b; }
   html { scrollbar-color: #475569 transparent; }
 }
+
+/* ── アニメーション軽減 (前庭障害対応) ──────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animation-fade-in,
+  .animation-slide-up,
+  .animation-scale-in {
+    animation: none !important;
+  }
+  .ripple::after {
+    display: none;
+  }
+}

@@ -474,12 +474,12 @@ export default function Home() {
           const daysLeft = lastDay - day;
           if (isCurrentMonth && day >= 25 && !isConfirmed) {
             return (
-              <div className="bg-orange-50 border-2 border-orange-400 rounded-xl px-4 py-4 flex items-start gap-3 animate-pulse-slow">
-                <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+              <div className="bg-orange-50 dark:bg-orange-900/30 border-2 border-orange-400 dark:border-orange-600 rounded-xl px-4 py-4 flex items-start gap-3 animate-pulse-slow">
+                <div className="flex-shrink-0 w-10 h-10 bg-orange-100 dark:bg-orange-800/50 rounded-full flex items-center justify-center">
                   <i className="fa-solid fa-bell text-orange-500 text-lg" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-orange-800">
+                  <p className="text-sm font-bold text-orange-800 dark:text-orange-300">
                     {daysLeft === 0
                       ? '本日が月末です！確定してください'
                       : `あと${daysLeft}日で自動送信されます`}
@@ -503,7 +503,7 @@ export default function Home() {
                 if (month === 1) { setYear(year - 1); setMonth(12); }
                 else setMonth(month - 1);
               }}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition text-slate-500"
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition text-slate-500 dark:text-slate-300"
               aria-label="前月"
             >
               <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
@@ -519,7 +519,7 @@ export default function Home() {
                 if (month === 12) { setYear(year + 1); setMonth(1); }
                 else setMonth(month + 1);
               }}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition text-slate-500"
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition text-slate-500 dark:text-slate-300"
               aria-label="翌月"
             >
               <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true" />
@@ -545,7 +545,7 @@ export default function Home() {
           {/* KV 読み込み中オーバーレイ */}
           <div className="relative">
             {isKvLoading && (
-              <div className="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center rounded-lg gap-2">
+              <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 z-10 flex flex-col items-center justify-center rounded-lg gap-2">
                 <i className="fa-solid fa-spinner fa-spin text-brand-500 text-2xl" />
                 <p className="text-sm text-slate-500 font-medium">データを読み込み中...</p>
               </div>
@@ -588,7 +588,7 @@ export default function Home() {
         <div className="flex justify-center pt-2">
           <button
             onClick={generateData}
-            className="group bg-slate-800 hover:bg-slate-900 text-white w-full max-w-sm py-4 rounded-xl font-bold text-lg shadow-xl shadow-slate-200 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3"
+            className="group bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white w-full max-w-sm py-4 rounded-xl font-bold text-lg shadow-xl shadow-brand-200 dark:shadow-brand-900/30 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3"
           >
             <span className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center group-hover:bg-white/30 transition">
               <i className="fa-solid fa-wand-magic-sparkles" />
