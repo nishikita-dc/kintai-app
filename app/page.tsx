@@ -463,6 +463,36 @@ export default function Home() {
           </div>
         )}
 
+        {/* 月末リマインドバナー: 当月25日以降 & 未確定の場合のみ表示 */}
+        {(() => {
+          const now = new Date();
+          const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+          const day = now.getDate();
+          const lastDay = new Date(year, month, 0).getDate();
+          const daysLeft = lastDay - day;
+          if (isCurrentMonth && day >= 25 && !isConfirmed) {
+            return (
+              <div className="bg-orange-50 border-2 border-orange-400 rounded-xl px-4 py-4 flex items-start gap-3 animate-pulse-slow">
+                <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <i className="fa-solid fa-bell text-orange-500 text-lg" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-orange-800">
+                    {daysLeft === 0
+                      ? '本日が月末です！確定してください'
+                      : `あと${daysLeft}日で自動送信されます`}
+                  </p>
+                  <p className="text-xs text-orange-700 mt-0.5">
+                    {month}月{lastDay}日 20:00 に{ADMIN_NAME}へ送信されます。
+                    まだ確定されていません。内容を確認して「確定して送信予約する」を押してください。
+                  </p>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
         {/* 対象月バナー */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
