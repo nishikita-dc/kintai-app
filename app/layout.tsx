@@ -4,6 +4,11 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'スター歯科クリニック 勤怠管理アプリ',
   description: '勤怠打刻データ作成ツール',
+  openGraph: {
+    title: 'スター歯科クリニック 勤怠管理アプリ',
+    description: '勤怠打刻データ作成ツール',
+    images: [{ url: '/og-app.png', width: 1200, height: 630 }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
