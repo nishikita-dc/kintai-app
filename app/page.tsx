@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { PreviewRow, Summary, DoctorItem } from '@/types';
-import { JAPANESE_HOLIDAYS, DEFAULT_WORK_TIMES } from '@/lib/constants';
+import { JAPANESE_HOLIDAYS, DEFAULT_WORK_TIMES, WEEK_DAYS_JA } from '@/lib/constants';
 import { buildKintaiCsv } from '@/lib/csvFormatter';
 import type { CsvWorkRow } from '@/lib/csvFormatter';
 import { apiHeaders } from '@/lib/api';
+import { formatJST } from '@/lib/emailTemplate';
 import { useAppStorage } from '@/app/hooks/useAppStorage';
 import { useSchedule } from '@/app/hooks/useSchedule';
 import { useKvSync, useConfigSync } from '@/app/hooks/useKvSync';
@@ -15,7 +16,6 @@ import PreviewTable from '@/app/components/PreviewTable';
 import DoctorSelectScreen from '@/app/components/DoctorSelectScreen';
 import SettingsModal from '@/app/components/SettingsModal';
 
-const WEEK_DAYS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 
 export default function Home() {
   // ── ストレージ・ドクター管理 ──────────────────────────────────────
@@ -130,17 +130,7 @@ export default function Home() {
       .then((data) => {
         if (data?.confirmed) {
           setIsConfirmed(true);
-          const d = new Date(data.confirmedAt);
-          setConfirmedAt(
-            d.toLocaleString('ja-JP', {
-              timeZone: 'Asia/Tokyo',
-              year: 'numeric',
-              month: 'numeric',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-          );
+          setConfirmedAt(formatJST(data.confirmedAt));
         }
       })
       .catch((err) => {
@@ -243,7 +233,7 @@ export default function Home() {
 
         previewRows.push({
           date: `${Number(m)}/${Number(dt)}`,
-          week: WEEK_DAYS[dayOfWeek],
+          week: WEEK_DAYS_JA[dayOfWeek],
           weekIdx: dayOfWeek,
           type: status,
           in: `${start.slice(0, 2)}:${start.slice(2)}`,
@@ -315,37 +305,32 @@ export default function Home() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = (await res.json()) as { ok: boolean; confirmedAt: string };
-      const d = new Date(result.confirmedAt);
       setIsConfirmed(true);
-      setConfirmedAt(
-        d.toLocaleString('ja-JP', {
-          timeZone: 'Asia/Tokyo',
-          year: 'numeric',
-          month: 'numeric',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      );
+      setConfirmedAt(formatJST(result.confirmedAt));
     } catch (err) {
       console.error('確定エラー:', err);
-      alert('確定処理に失敗しました。もう一度お試しください。');
+      setConfirmError('確定処理に失敗しました。もう一度お試しください。');
     } finally {
       setIsConfirming(false);
     }
-  }, [empId, empName, year, month, generatedCsv]);
+  }, [empId, empName, year, month, generatedCsv, summary]);
+
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   const handleCancelConfirm = useCallback(async () => {
+    setConfirmError(null);
     try {
-      await fetch('/api/confirm', {
+      const res = await fetch('/api/confirm', {
         method: 'DELETE',
         headers: apiHeaders(),
         body: JSON.stringify({ empId, year, month }),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setIsConfirmed(false);
       setConfirmedAt(null);
     } catch (err) {
       console.error('確定取消エラー:', err);
+      setConfirmError('確定の取消に失敗しました。もう一度お試しください。');
     }
   }, [empId, year, month]);
 
@@ -436,7 +421,7 @@ export default function Home() {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">
-              定休日: 日曜 + {['日','月','火','水','木','金','土'][weekdayHoliday]}曜
+              定休日: 日曜 + {WEEK_DAYS_JA[weekdayHoliday]}曜
             </p>
           </div>
         </div>
@@ -477,7 +462,7 @@ export default function Home() {
               extraWorkDays={extraWorkDays}
               absentRecords={absentRecords}
               onToggleDate={toggleDateStatus}
-              disabled={isConfirmed}
+              disabled={isConfirmed || isConfirming}
             />
 
             <ExceptionEditor
@@ -487,7 +472,7 @@ export default function Home() {
               setExtraWorkDays={setExtraWorkDays}
               setAbsentRecords={setAbsentRecords}
               setTimeChanges={setTimeChanges}
-              disabled={isConfirmed}
+              disabled={isConfirmed || isConfirming}
             />
           </div>
         </div>

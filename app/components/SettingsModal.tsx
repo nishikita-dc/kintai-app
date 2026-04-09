@@ -1,6 +1,6 @@
 'use client';
 
-import { getJapaneseHolidays } from '@/lib/constants';
+import { getJapaneseHolidays, WEEK_DAYS_JA } from '@/lib/constants';
 
 interface SettingsModalProps {
   weekdayHoliday: number;
@@ -10,7 +10,7 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-const DAY_NAMES = ['月', '火', '水', '木', '金', '土'] as const;
+const DAY_NAMES = WEEK_DAYS_JA.slice(1); // 月〜土（日は固定休のため除外）
 
 export default function SettingsModal({
   weekdayHoliday,

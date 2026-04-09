@@ -53,6 +53,16 @@ export const JAPANESE_HOLIDAYS: Record<string, string> = new Proxy(
   },
 );
 
+// ── 曜日名（日本語）────────────────────────────────────────────────
+/** 日〜土の曜日名（インデックス = Date.getDay() の戻り値） */
+export const WEEK_DAYS_JA = ['日', '月', '火', '水', '木', '金', '土'] as const;
+export type WeekDayJa = (typeof WEEK_DAYS_JA)[number];
+
+// ── 欠勤種別 ─────────────────────────────────────────────────────
+/** ユーザーが手動で選択できる欠勤種別（祝日は自動付与のため含めない） */
+export const USER_ABSENT_TYPES = ['有給', '欠勤', '振替休日'] as const;
+export type UserAbsentType = (typeof USER_ABSENT_TYPES)[number];
+
 // ── デフォルト勤務時間 ────────────────────────────────────────────
 export interface DefaultTimes {
   inTime: string;     // "09:00"

@@ -1,7 +1,8 @@
 import type { ConfirmData } from '../types';
 
 // ── 日付フォーマット ──────────────────────────────────────────
-function formatJST(isoStr: string): string {
+/** ISO 文字列を JST（日本標準時）の読みやすい形式に変換する（SSOT） */
+export function formatJST(isoStr: string): string {
   try {
     return new Date(isoStr).toLocaleString('ja-JP', {
       timeZone: 'Asia/Tokyo',

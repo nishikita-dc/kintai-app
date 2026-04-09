@@ -1,7 +1,7 @@
 'use client';
 
 import type { AbsentRecord } from '@/types';
-import { JAPANESE_HOLIDAYS } from '@/lib/constants';
+import { JAPANESE_HOLIDAYS, WEEK_DAYS_JA } from '@/lib/constants';
 
 interface CalendarViewProps {
   year: number;
@@ -14,7 +14,7 @@ interface CalendarViewProps {
   disabled?: boolean;
 }
 
-const WEEK_LABELS = ['日', '月', '火', '水', '木', '金', '土'] as const;
+const WEEK_LABELS = WEEK_DAYS_JA;
 
 export default function CalendarView({
   year,

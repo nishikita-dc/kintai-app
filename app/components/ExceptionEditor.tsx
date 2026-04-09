@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import type { AbsentRecord, TimeChange } from '@/types';
+import { WEEK_DAYS_JA, USER_ABSENT_TYPES } from '@/lib/constants';
+import type { UserAbsentType } from '@/lib/constants';
 
 interface ExceptionEditorProps {
   extraWorkDays: string[];
@@ -13,11 +15,8 @@ interface ExceptionEditorProps {
   disabled?: boolean;
 }
 
-const ABSENT_TYPES = ['有給', '欠勤', '振替休日'] as const;
-type AbsentType = (typeof ABSENT_TYPES)[number];
-
 function getWeekDay(dateStr: string) {
-  return ['日', '月', '火', '水', '木', '金', '土'][new Date(dateStr).getDay()];
+  return WEEK_DAYS_JA[new Date(dateStr).getDay()];
 }
 
 export default function ExceptionEditor({
@@ -31,20 +30,35 @@ export default function ExceptionEditor({
 }: ExceptionEditorProps) {
   const [tempExtraDate, setTempExtraDate] = useState('');
   const [tempAbsentDate, setTempAbsentDate] = useState('');
-  const [tempAbsentType, setTempAbsentType] = useState<AbsentType>('有給');
+  const [tempAbsentType, setTempAbsentType] = useState<UserAbsentType>('有給');
   const [tempChangeDate, setTempChangeDate] = useState('');
   const [tempInTime, setTempInTime] = useState('');
   const [tempOutTime, setTempOutTime] = useState('');
 
+  const [extraError, setExtraError] = useState<string | null>(null);
+  const [absentError, setAbsentError] = useState<string | null>(null);
+  const [changeError, setChangeError] = useState<string | null>(null);
+
   const addExtraWork = () => {
-    if (tempExtraDate && !extraWorkDays.includes(tempExtraDate)) {
-      setExtraWorkDays((prev) => [...prev, tempExtraDate].sort());
-      setTempExtraDate('');
+    if (!tempExtraDate) {
+      setExtraError('日付を選択してください');
+      return;
     }
+    if (extraWorkDays.includes(tempExtraDate)) {
+      setExtraError('すでに登録済みの日付です');
+      return;
+    }
+    setExtraError(null);
+    setExtraWorkDays((prev) => [...prev, tempExtraDate].sort());
+    setTempExtraDate('');
   };
 
   const addAbsentRecord = () => {
-    if (!tempAbsentDate) return;
+    if (!tempAbsentDate) {
+      setAbsentError('日付を選択してください');
+      return;
+    }
+    setAbsentError(null);
     setAbsentRecords((prev) =>
       [...prev.filter((r) => r.date !== tempAbsentDate), { date: tempAbsentDate, type: tempAbsentType }].sort(
         (a, b) => a.date.localeCompare(b.date),
@@ -54,7 +68,15 @@ export default function ExceptionEditor({
   };
 
   const addChange = () => {
-    if (!tempChangeDate || !tempInTime || !tempOutTime) return;
+    if (!tempChangeDate || !tempInTime || !tempOutTime) {
+      setChangeError('日付・開始・終了をすべて入力してください');
+      return;
+    }
+    if (tempInTime >= tempOutTime) {
+      setChangeError('開始時刻は終了時刻より前にしてください');
+      return;
+    }
+    setChangeError(null);
     setTimeChanges((prev) =>
       [...prev.filter((c) => c.date !== tempChangeDate), { date: tempChangeDate, inTime: tempInTime, outTime: tempOutTime }].sort(
         (a, b) => a.date.localeCompare(b.date),
@@ -84,14 +106,14 @@ export default function ExceptionEditor({
               <input
                 type="date"
                 value={tempAbsentDate}
-                onChange={(e) => setTempAbsentDate(e.target.value)}
+                onChange={(e) => { setTempAbsentDate(e.target.value); setAbsentError(null); }}
                 className="w-full rounded border-slate-300 p-1.5 text-sm border outline-none"
               />
             </div>
             <div className="mb-3">
               <span className="text-xs text-slate-500 block mb-1">休みの種類</span>
               <div className="flex gap-2">
-                {ABSENT_TYPES.map((type) => (
+                {USER_ABSENT_TYPES.map((type) => (
                   <label
                     key={type}
                     className={`flex-1 text-center py-1.5 rounded text-xs cursor-pointer border select-none transition ${
@@ -109,7 +131,7 @@ export default function ExceptionEditor({
                       name="absentType"
                       value={type}
                       checked={tempAbsentType === type}
-                      onChange={() => setTempAbsentType(type)}
+                      onChange={() => setTempAbsentType(type as UserAbsentType)}
                       className="hidden"
                     />
                     {type}
@@ -117,6 +139,12 @@ export default function ExceptionEditor({
                 ))}
               </div>
             </div>
+            {absentError && (
+              <p className="text-xs text-red-500 mb-2">
+                <i className="fa-solid fa-circle-exclamation mr-1" />
+                {absentError}
+              </p>
+            )}
             <button
               onClick={addAbsentRecord}
               className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm transition"
@@ -179,11 +207,11 @@ export default function ExceptionEditor({
             </span>
             休日出勤リスト（振替診療含む）
           </label>
-          <div className="flex gap-2 mb-3">
+          <div className="flex gap-2 mb-1">
             <input
               type="date"
               value={tempExtraDate}
-              onChange={(e) => setTempExtraDate(e.target.value)}
+              onChange={(e) => { setTempExtraDate(e.target.value); setExtraError(null); }}
               className="flex-1 rounded-lg border-slate-300 p-2 text-sm border focus:ring-2 focus:ring-orange-200 outline-none"
             />
             <button
@@ -193,6 +221,12 @@ export default function ExceptionEditor({
               追加
             </button>
           </div>
+          {extraError && (
+            <p className="text-xs text-red-500 mb-2">
+              <i className="fa-solid fa-circle-exclamation mr-1" />
+              {extraError}
+            </p>
+          )}
           <div className="flex flex-col gap-2">
             {extraWorkDays.length === 0 && (
               <span className="text-xs text-slate-300">登録なし</span>
@@ -234,7 +268,7 @@ export default function ExceptionEditor({
             <input
               type="date"
               value={tempChangeDate}
-              onChange={(e) => setTempChangeDate(e.target.value)}
+              onChange={(e) => { setTempChangeDate(e.target.value); setChangeError(null); }}
               className="w-full rounded border-slate-300 p-1.5 text-sm border outline-none"
             />
           </div>
@@ -244,8 +278,12 @@ export default function ExceptionEditor({
               <input
                 type="time"
                 value={tempInTime}
-                onChange={(e) => setTempInTime(e.target.value)}
-                className="w-full rounded border-slate-300 p-1.5 text-sm border outline-none"
+                onChange={(e) => { setTempInTime(e.target.value); setChangeError(null); }}
+                className={`w-full rounded p-1.5 text-sm border outline-none ${
+                  changeError && tempInTime && tempOutTime && tempInTime >= tempOutTime
+                    ? 'border-red-400 bg-red-50'
+                    : 'border-slate-300'
+                }`}
               />
             </div>
             <span className="text-slate-400 pb-2">~</span>
@@ -254,11 +292,21 @@ export default function ExceptionEditor({
               <input
                 type="time"
                 value={tempOutTime}
-                onChange={(e) => setTempOutTime(e.target.value)}
-                className="w-full rounded border-slate-300 p-1.5 text-sm border outline-none"
+                onChange={(e) => { setTempOutTime(e.target.value); setChangeError(null); }}
+                className={`w-full rounded p-1.5 text-sm border outline-none ${
+                  changeError && tempInTime && tempOutTime && tempInTime >= tempOutTime
+                    ? 'border-red-400 bg-red-50'
+                    : 'border-slate-300'
+                }`}
               />
             </div>
           </div>
+          {changeError && (
+            <p className="text-xs text-red-500 mt-2">
+              <i className="fa-solid fa-circle-exclamation mr-1" />
+              {changeError}
+            </p>
+          )}
           <button
             onClick={addChange}
             className="w-full mt-3 bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm transition"

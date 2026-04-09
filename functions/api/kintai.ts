@@ -2,6 +2,8 @@
 
 import type { AbsentRecord, TimeChange, KvData, PostBody } from '../../types';
 import { validateKvData } from '../../lib/validators';
+import { kvKintaiKey } from '../../lib/kvKeys';
+import { getCorsHeaders, authenticate, jsonResponse, isValidEmpId } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -9,55 +11,16 @@ interface Env {
   ALLOWED_ORIGINS: string; // カンマ区切り: "https://example.com,https://dev.example.com"
 }
 
-// ── CORS: 許可オリジンのみ ──────────────────────────
-function getCorsHeaders(request: Request, env: Env): Record<string, string> {
-  const origin = request.headers.get('Origin') ?? '';
-  const allowed = (env.ALLOWED_ORIGINS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  // 許可リストに含まれるオリジンだけ反映。含まれなければヘッダーを返さない
-  const allowedOrigin = allowed.includes(origin) ? origin : '';
-
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
-    Vary: 'Origin',
-  };
-}
-
-// ── 認証: X-API-Key ヘッダーで検証 ────────────────────
-function authenticate(request: Request, env: Env): boolean {
-  const apiKey = env.API_KEY;
-  if (!apiKey) return true; // 未設定時はスキップ（開発用）
-  return request.headers.get('X-API-Key') === apiKey;
-}
-
-function jsonResponse(body: unknown, corsHeaders: Record<string, string>, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-
-function buildKvKey(empId: string, year: string | number, month: string | number): string {
-  const monthStr = String(Number(month)).padStart(2, '0');
-  return `kintai:${empId}:${year}-${monthStr}`;
-}
-
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
-  const cors = getCorsHeaders(request, env);
+  const cors = getCorsHeaders(request, env.ALLOWED_ORIGINS);
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: cors });
   }
 
-  // ── 認証チェック ─────────────────────────────────
-  if (!authenticate(request, env)) {
+  if (!authenticate(request, env.API_KEY)) {
     return jsonResponse({ error: '認証に失敗しました' }, cors, 401);
   }
 
@@ -73,7 +36,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return jsonResponse({ error: 'empId, year, month は必須です' }, cors, 400);
     }
 
-    const key = buildKvKey(empId, year, month);
+    const key = kvKintaiKey(empId, year, month);
     const raw = await env.KINTAI_DATA.get(key);
 
     if (raw === null) {
@@ -121,7 +84,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return jsonResponse({ error: 'data のスキーマが不正です' }, cors, 400);
     }
 
-    const key = buildKvKey(empId, year, month);
+    const key = kvKintaiKey(empId, year, month);
     await env.KINTAI_DATA.put(key, JSON.stringify(validated));
 
     return jsonResponse({ ok: true }, cors);

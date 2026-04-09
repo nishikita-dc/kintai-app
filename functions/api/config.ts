@@ -1,6 +1,8 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import type { DoctorConfig } from '../../types';
+import { kvConfigKey } from '../../lib/kvKeys';
+import { getCorsHeaders, authenticate, jsonResponse } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -8,44 +10,15 @@ interface Env {
   ALLOWED_ORIGINS: string;
 }
 
-function getCorsHeaders(request: Request, env: Env): Record<string, string> {
-  const origin = request.headers.get('Origin') ?? '';
-  const allowed = (env.ALLOWED_ORIGINS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const allowedOrigin = allowed.includes(origin) ? origin : '';
-
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
-    Vary: 'Origin',
-  };
-}
-
-function authenticate(request: Request, env: Env): boolean {
-  const apiKey = env.API_KEY;
-  if (!apiKey) return true;
-  return request.headers.get('X-API-Key') === apiKey;
-}
-
-function jsonResponse(body: unknown, corsHeaders: Record<string, string>, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
-  const cors = getCorsHeaders(request, env);
+  const cors = getCorsHeaders(request, env.ALLOWED_ORIGINS);
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: cors });
   }
 
-  if (!authenticate(request, env)) {
+  if (!authenticate(request, env.API_KEY)) {
     return jsonResponse({ error: '認証に失敗しました' }, cors, 401);
   }
 
@@ -58,7 +31,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return jsonResponse({ error: 'empId は必須です' }, cors, 400);
     }
 
-    const key = `config:${empId}`;
+    const key = kvConfigKey(empId);
     const raw = await env.KINTAI_DATA.get(key);
 
     if (raw === null) {
@@ -101,7 +74,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return jsonResponse({ error: 'weekdayHoliday は 0-6 の整数です' }, cors, 400);
     }
 
-    const key = `config:${b.empId}`;
+    const key = kvConfigKey(b.empId as string);
     const data: DoctorConfig = { weekdayHoliday: wd };
     await env.KINTAI_DATA.put(key, JSON.stringify(data));
 

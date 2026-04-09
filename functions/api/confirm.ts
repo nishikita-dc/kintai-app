@@ -1,6 +1,8 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import type { ConfirmData } from '../../types';
+import { kvConfirmKey } from '../../lib/kvKeys';
+import { getCorsHeaders, authenticate, jsonResponse } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -8,48 +10,17 @@ interface Env {
   ALLOWED_ORIGINS: string;
 }
 
-function getCorsHeaders(request: Request, env: Env): Record<string, string> {
-  const origin = request.headers.get('Origin') ?? '';
-  const allowed = (env.ALLOWED_ORIGINS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const allowedOrigin = allowed.includes(origin) ? origin : '';
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
-    Vary: 'Origin',
-  };
-}
-
-function authenticate(request: Request, env: Env): boolean {
-  const apiKey = env.API_KEY;
-  if (!apiKey) return true;
-  return request.headers.get('X-API-Key') === apiKey;
-}
-
-function jsonResponse(body: unknown, corsHeaders: Record<string, string>, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-
-function buildConfirmKey(empId: string, year: number, month: number): string {
-  const monthStr = String(month).padStart(2, '0');
-  return `confirmed:${year}-${monthStr}:${empId}`;
-}
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
-  const cors = getCorsHeaders(request, env);
+  // confirm は DELETE も許可
+  const cors = getCorsHeaders(request, env.ALLOWED_ORIGINS, 'GET, POST, DELETE, OPTIONS');
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: cors });
   }
 
-  if (!authenticate(request, env)) {
+  if (!authenticate(request, env.API_KEY)) {
     return jsonResponse({ error: '認証に失敗しました' }, cors, 401);
   }
 
@@ -64,7 +35,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return jsonResponse({ error: 'empId, year, month は必須です' }, cors, 400);
     }
 
-    const key = buildConfirmKey(empId, year, month);
+    const key = kvConfirmKey(empId, year, month);
     const raw = await env.KINTAI_DATA.get(key);
 
     if (raw === null) {
@@ -122,7 +93,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     const confirmedAt = new Date().toISOString();
-    const key = buildConfirmKey(empId, year, month);
+    const key = kvConfirmKey(empId, year, month);
     const data: ConfirmData = {
       empId,
       empName,
@@ -152,7 +123,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return jsonResponse({ error: 'empId, year, month は必須です' }, cors, 400);
     }
 
-    const key = buildConfirmKey(empId, year, month);
+    const key = kvConfirmKey(empId, year, month);
     await env.KINTAI_DATA.delete(key);
 
     return jsonResponse({ ok: true }, cors);
