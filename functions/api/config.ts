@@ -2,7 +2,7 @@
 
 import type { DoctorConfig } from '../../types';
 import { kvConfigKey } from '../../lib/kvKeys';
-import { getCorsHeaders, authenticate, jsonResponse } from '../_shared/edgeHelpers';
+import { getCorsHeaders, authenticate, jsonResponse, isValidEmpId } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -29,6 +29,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const empId = url.searchParams.get('empId');
     if (!empId) {
       return jsonResponse({ error: 'empId は必須です' }, cors, 400);
+    }
+    if (!isValidEmpId(empId)) {
+      return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
     }
 
     const key = kvConfigKey(empId);

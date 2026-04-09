@@ -2,7 +2,7 @@
 
 import type { ConfirmData } from '../../types';
 import { kvConfirmKey } from '../../lib/kvKeys';
-import { getCorsHeaders, authenticate, jsonResponse } from '../_shared/edgeHelpers';
+import { getCorsHeaders, authenticate, jsonResponse, isValidEmpId } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -33,6 +33,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     if (!empId || isNaN(year) || isNaN(month)) {
       return jsonResponse({ error: 'empId, year, month は必須です' }, cors, 400);
+    }
+    if (!isValidEmpId(empId)) {
+      return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
     }
 
     const key = kvConfirmKey(empId, year, month);

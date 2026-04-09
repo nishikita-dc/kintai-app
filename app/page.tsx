@@ -406,6 +406,23 @@ export default function Home() {
           </div>
         )}
 
+        {/* 確定エラーバナー */}
+        {confirmError && (
+          <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-sm text-red-700">
+              <i className="fa-solid fa-circle-exclamation mr-2" />
+              {confirmError}
+            </span>
+            <button
+              onClick={() => setConfirmError(null)}
+              className="text-red-400 hover:text-red-600 transition flex-shrink-0"
+              aria-label="エラーを閉じる"
+            >
+              <i className="fa-solid fa-xmark" />
+            </button>
+          </div>
+        )}
+
         {/* 対象月バナー */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -509,7 +526,7 @@ export default function Home() {
       </main>
 
       <footer className="text-center p-6 text-slate-400 text-xs">
-        &copy; 2026 Star Dental Clinic System.
+        &copy; {new Date().getFullYear()} Star Dental Clinic System.
       </footer>
 
       {/* 設定モーダル */}

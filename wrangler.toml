@@ -20,7 +20,13 @@ preview_id = "ca8e9297b16a41398e463043975fcb2d"
 # SENDER_EMAIL: SendGrid の Single Sender Verification で認証済みのメールアドレス
 # NOTIFY_EMAIL: 勤怠データの送信先（山本さん）
 
+# ── 本番環境変数 ──
+# ALLOWED_ORIGINS は Cloudflare Pages Dashboard > Settings > Environment Variables で
+# Production / Preview 別に設定してください。
+#   Production: "https://kintai-app-dyu.pages.dev"
+#   Preview:    "https://*.kintai-app-dyu.pages.dev,http://localhost:3000,http://localhost:3001"
+
 [vars]
-ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:3001"
+ALLOWED_ORIGINS = "https://kintai-app-dyu.pages.dev"
 NOTIFY_EMAIL = "stardc666@gmail.com"
 SENDER_EMAIL = "stardc.nishikita@gmail.com"

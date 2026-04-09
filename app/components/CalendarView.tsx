@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import type { AbsentRecord } from '@/types';
 import { JAPANESE_HOLIDAYS, WEEK_DAYS_JA } from '@/lib/constants';
 
@@ -16,7 +17,7 @@ interface CalendarViewProps {
 
 const WEEK_LABELS = WEEK_DAYS_JA;
 
-export default function CalendarView({
+function CalendarView({
   year,
   month,
   holidays,
@@ -28,6 +29,13 @@ export default function CalendarView({
 }: CalendarViewProps) {
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDay = new Date(year, month - 1, 1).getDay();
+
+  // O(1) ルックアップ用 Map（O(n*m) → O(n) に改善）
+  const extraSet = useMemo(() => new Set(extraWorkDays), [extraWorkDays]);
+  const absentMap = useMemo(
+    () => new Map(absentRecords.map((r) => [r.date, r])),
+    [absentRecords],
+  );
 
   const cells: React.ReactNode[] = [];
 
@@ -41,8 +49,8 @@ export default function CalendarView({
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const dayOfWeek = new Date(year, month - 1, d).getDay();
 
-    const isExtra = extraWorkDays.includes(dateStr);
-    const absentRec = absentRecords.find((r) => r.date === dateStr);
+    const isExtra = extraSet.has(dateStr);
+    const absentRec = absentMap.get(dateStr);
     const isHoliday = holidays.includes(dayOfWeek);
     const isNationalHoliday = !!JAPANESE_HOLIDAYS[dateStr];
 
@@ -88,11 +96,16 @@ export default function CalendarView({
       textColor = 'text-slate-400';
     }
 
+    const ariaLabel = `${month}月${d}日 ${WEEK_DAYS_JA[dayOfWeek]}曜日${statusLabel ? ` ${statusLabel}` : ' 通常出勤'}`;
+
     cells.push(
-      <div
+      <button
+        type="button"
         key={d}
         onClick={() => !disabled && onToggleDate(dateStr)}
-        className={`h-20 border ${borderColor} ${bgColor} p-1 transition relative group overflow-hidden ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:brightness-95'}`}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className={`h-20 border ${borderColor} ${bgColor} p-1 transition relative group overflow-hidden text-left ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:brightness-95 focus:ring-2 focus:ring-brand-300 focus:outline-none'}`}
       >
         <div className="flex justify-between items-start">
           <span
@@ -113,9 +126,9 @@ export default function CalendarView({
           )}
         </div>
         <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <i className="fa-solid fa-pen text-slate-400 bg-white rounded-full p-1 shadow-sm text-xs" />
+          <i className="fa-solid fa-pen text-slate-400 bg-white rounded-full p-1 shadow-sm text-xs" aria-hidden="true" />
         </div>
-      </div>,
+      </button>,
     );
   }
 
@@ -137,3 +150,5 @@ export default function CalendarView({
     </div>
   );
 }
+
+export default React.memo(CalendarView);

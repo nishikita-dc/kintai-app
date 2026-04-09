@@ -1,5 +1,14 @@
 import type { ConfirmData } from '../types';
 
+// ── HTML エスケープ ──────────────────────────────────────────
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // ── 日付フォーマット ──────────────────────────────────────────
 /** ISO 文字列を JST（日本標準時）の読みやすい形式に変換する（SSOT） */
 export function formatJST(isoStr: string): string {
@@ -19,7 +28,9 @@ export function formatJST(isoStr: string): string {
 
 // ── ドクター 1名分のカード HTML ───────────────────────────────
 function buildDoctorCard(entry: ConfirmData): string {
-  const { empId, empName, confirmedAt, summary } = entry;
+  const empId = escapeHtml(entry.empId);
+  const empName = escapeHtml(entry.empName);
+  const { confirmedAt, summary } = entry;
 
   const extraLabel =
     summary && summary.extraDays > 0 ? `（うち休日出勤 ${summary.extraDays}日）` : '';

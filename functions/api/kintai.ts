@@ -35,6 +35,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (!empId || !year || !month) {
       return jsonResponse({ error: 'empId, year, month は必須です' }, cors, 400);
     }
+    if (!isValidEmpId(empId)) {
+      return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
+    }
 
     const key = kvKintaiKey(empId, year, month);
     const raw = await env.KINTAI_DATA.get(key);
@@ -76,6 +79,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     if (typeof empId !== 'string' || typeof year !== 'number' || typeof month !== 'number' || !data) {
       return jsonResponse({ error: 'empId(string), year(number), month(number), data は必須です' }, cors, 400);
+    }
+    if (!isValidEmpId(empId)) {
+      return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
     }
 
     // POST ボディの data もバリデーション

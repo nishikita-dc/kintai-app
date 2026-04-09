@@ -63,16 +63,16 @@ export function getHolidaysForYear(year: number): Record<string, string> {
   for (const dateStr of sorted) {
     const d = new Date(dateStr + 'T00:00:00');
     if (d.getDay() === 0) {
-      // 翌日以降で祝日でない日を探す
+      // 翌日以降で祝日でない日を探す（最大7日間で打ち切り）
       const next = new Date(d);
-      do {
+      for (let guard = 0; guard < 7; guard++) {
         next.setDate(next.getDate() + 1);
         const nextKey = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
         if (!holidays[nextKey]) {
           holidays[nextKey] = '振替休日';
           break;
         }
-      } while (true);
+      }
     }
   }
 
