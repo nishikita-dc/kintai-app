@@ -11,6 +11,10 @@ preview_id = "ca8e9297b16a41398e463043975fcb2d"
 
 # ── セキュリティ設定 ──
 # API_KEY: wrangler secret put API_KEY で設定してください
+#   → ドクター用アプリが使用するAPIキー（NEXT_PUBLIC_API_KEY と対応）
+# ADMIN_API_KEY: wrangler secret put ADMIN_API_KEY で設定してください
+#   → 管理ダッシュボード（/admin/）専用のパスワード。ドクター用と別に設定してください。
+#   例: wrangler secret put ADMIN_API_KEY
 # ALLOWED_ORIGINS: Cloudflare Pages の Settings > Environment Variables で設定
 #   例: "https://kintai-app.pages.dev,https://custom-domain.com"
 

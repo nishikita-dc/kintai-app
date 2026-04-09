@@ -386,32 +386,28 @@ export default function Home() {
     <div className="min-h-screen pb-20">
       <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="スター歯科クリニック" className="w-10 h-10 rounded-lg shadow-md" />
-            <div>
-              <h1 className="text-lg font-bold text-slate-800 leading-tight">
-                勤怠管理アプリ{' '}
-                <span className="text-brand-500 text-xs bg-brand-50 px-1 rounded border border-brand-200 ml-1">
-                  Ver 5.0
-                </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <img src="/logo.png" alt="スター歯科クリニック" className="w-9 h-9 flex-shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-slate-800 leading-tight whitespace-nowrap">
+                勤怠管理アプリ
               </h1>
-              <p className="text-xs text-slate-500">医療法人社団 スター歯科クリニック</p>
+              <p className="text-[10px] text-slate-400 whitespace-nowrap">医療法人社団 スター歯科クリニック</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <div className="text-right">
-              <p className="text-sm font-bold text-slate-700">
-                <i className="fa-solid fa-user-doctor mr-1 text-brand-500" />
+              <p className="text-sm font-bold text-slate-700 whitespace-nowrap">
                 {empName}先生
               </p>
-              <p className="text-xs text-slate-400 font-mono">ID: {empId}</p>
+              <p className="text-[10px] text-slate-400 font-mono">ID: {empId}</p>
             </div>
             <button
               onClick={() => setShowSettings(true)}
-              className="text-xs bg-slate-100 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 font-bold"
+              className="text-xs bg-slate-100 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 text-slate-600 border border-slate-200 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 font-bold"
+              aria-label="設定"
             >
               <i className="fa-solid fa-gear" />
-              設定
             </button>
           </div>
         </div>
