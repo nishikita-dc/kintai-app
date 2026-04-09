@@ -114,20 +114,20 @@ function CalendarView({
       >
         <div className="flex justify-between items-start">
           <span
-            className={`text-sm font-bold ${
+            className={`text-base font-black ${
               isToday
-                ? 'bg-brand-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs'
+                ? 'bg-brand-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm'
                 : dayOfWeek === 0
-                  ? 'text-red-500'
+                  ? 'text-red-600 dark:text-red-400'
                   : dayOfWeek === 6
-                    ? 'text-blue-500'
-                    : 'text-slate-600'
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-slate-800 dark:text-slate-100'
             }`}
           >
             {d}
           </span>
           {statusLabel && (
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${textColor} bg-white/70 shadow-sm`}>
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${textColor} bg-white/80 dark:bg-slate-900/60 shadow-sm`}>
               {statusLabel.slice(0, 4)}
             </span>
           )}
