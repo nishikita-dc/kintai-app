@@ -29,15 +29,24 @@ export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-slate-100 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-2xl">
         {/* ヘッダー */}
         <div className="text-center mb-10">
-          <img src="/logo.png" alt="スター歯科クリニック" className="w-16 h-16 rounded-2xl shadow-lg mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">勤怠管理アプリ</h1>
-          <p className="text-sm text-slate-500 mb-6">医療法人社団 スター歯科クリニック</p>
-          <div className="bg-white rounded-xl border border-slate-200 px-5 py-3 inline-flex items-center gap-2 shadow-sm">
-            <i className="fa-solid fa-user-doctor text-brand-500" />
+          <div className="relative inline-block mb-5">
+            <div className="w-20 h-20 bg-gradient-to-br from-brand-400 to-amber-400 rounded-3xl shadow-xl flex items-center justify-center mx-auto">
+              <img src="/logo.png" alt="スター歯科クリニック" className="w-14 h-14" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
+              <i className="fa-solid fa-tooth text-brand-500 text-xs" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-black text-slate-800 mb-1">勤怠管理アプリ</h1>
+          <p className="text-sm text-slate-400 mb-6">医療法人社団 スター歯科クリニック</p>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-brand-200 px-5 py-3 inline-flex items-center gap-2 shadow-sm">
+            <div className="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center">
+              <i className="fa-solid fa-user-doctor text-brand-500 text-xs" />
+            </div>
             <p className="text-slate-700 font-bold text-sm">
               {selectedId ? '読み込み中...' : 'ドクターを選択してください'}
             </p>
@@ -49,48 +58,48 @@ export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps
           {doctorList.map((doc) => {
             const isSelected = selectedId === doc.id;
             const isOther = selectedId !== null && !isSelected;
+            const initial = doc.name.slice(0, 1);
             return (
               <button
                 key={doc.id}
                 onClick={() => handleSelect(doc)}
                 disabled={!!selectedId}
                 className={`
-                  relative border rounded-xl p-4 text-left shadow-sm transition-all duration-300
+                  relative rounded-2xl p-4 text-left transition-all duration-300
                   ${isSelected
-                    ? 'bg-brand-500 border-brand-500 shadow-xl scale-[1.04]'
+                    ? 'bg-gradient-to-br from-brand-500 to-amber-500 shadow-xl scale-[1.04] border-2 border-brand-400'
                     : isOther
-                      ? 'bg-white border-slate-200 opacity-40 cursor-not-allowed'
-                      : 'bg-white border-slate-200 hover:shadow-md hover:border-brand-300 hover:bg-brand-50 active:scale-95 group'
+                      ? 'bg-white border border-slate-200 opacity-40 cursor-not-allowed'
+                      : 'bg-white border border-slate-200 hover:shadow-lg hover:border-brand-300 hover:-translate-y-0.5 active:scale-95 group'
                   }
                 `}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center gap-2 py-1">
                   <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300
+                    w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300
                     ${isSelected
                       ? 'bg-white/25'
-                      : 'bg-brand-100 text-brand-600 group-hover:bg-brand-200'
+                      : 'bg-gradient-to-br from-brand-100 to-amber-100 group-hover:from-brand-200 group-hover:to-amber-200'
                     }
                   `}>
                     {isSelected
-                      ? <i className="fa-solid fa-check text-white text-base" />
-                      : <i className="fa-solid fa-user-doctor text-sm text-brand-600" />
+                      ? <i className="fa-solid fa-check text-white text-lg" />
+                      : <span className="text-lg font-black text-brand-600">{initial}</span>
                     }
                   </div>
-                  <div className="min-w-0">
+                  <div className="text-center min-w-0 w-full">
                     <p className={`font-bold truncate transition-colors duration-300 ${
                       isSelected ? 'text-white' : 'text-slate-700 group-hover:text-brand-700'
                     }`}>
                       {doc.name}先生
                     </p>
-                    <p className={`text-xs font-mono transition-colors duration-300 ${
-                      isSelected ? 'text-white/70' : 'text-slate-400'
+                    <p className={`text-[10px] font-mono transition-colors duration-300 ${
+                      isSelected ? 'text-white/60' : 'text-slate-400'
                     }`}>
                       ID: {doc.id}
                     </p>
                   </div>
                 </div>
-                {/* 選択時のスピナー */}
                 {isSelected && (
                   <div className="absolute top-2 right-2">
                     <i className="fa-solid fa-spinner fa-spin text-white/80 text-xs" />

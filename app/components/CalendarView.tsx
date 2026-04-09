@@ -39,9 +39,13 @@ function CalendarView({
 
   const cells: React.ReactNode[] = [];
 
+  const today = new Date();
+  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth() + 1;
+  const todayDate = today.getDate();
+
   for (let i = 0; i < firstDay; i++) {
     cells.push(
-      <div key={`empty-${i}`} className="h-20 bg-slate-50 border border-slate-100" />,
+      <div key={`empty-${i}`} className="h-20 bg-slate-50/50 rounded-xl" />,
     );
   }
 
@@ -97,6 +101,7 @@ function CalendarView({
     }
 
     const ariaLabel = `${month}月${d}日 ${WEEK_DAYS_JA[dayOfWeek]}曜日${statusLabel ? ` ${statusLabel}` : ' 通常出勤'}`;
+    const isToday = isCurrentMonth && d === todayDate;
 
     cells.push(
       <button
@@ -105,48 +110,59 @@ function CalendarView({
         onClick={() => !disabled && onToggleDate(dateStr)}
         disabled={disabled}
         aria-label={ariaLabel}
-        className={`h-20 border ${borderColor} ${bgColor} p-1 transition relative group overflow-hidden text-left ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:brightness-95 focus:ring-2 focus:ring-brand-300 focus:outline-none'}`}
+        className={`h-20 rounded-xl ${bgColor} p-1.5 transition-all relative group overflow-hidden text-left ${isToday ? 'ring-2 ring-brand-400 ring-offset-1' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-brand-300 focus:outline-none active:scale-95'}`}
       >
         <div className="flex justify-between items-start">
           <span
             className={`text-sm font-bold ${
-              dayOfWeek === 0
-                ? 'text-red-500'
-                : dayOfWeek === 6
-                  ? 'text-blue-500'
-                  : 'text-slate-600'
+              isToday
+                ? 'bg-brand-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs'
+                : dayOfWeek === 0
+                  ? 'text-red-500'
+                  : dayOfWeek === 6
+                    ? 'text-blue-500'
+                    : 'text-slate-600'
             }`}
           >
             {d}
           </span>
           {statusLabel && (
-            <span className={`text-[9px] font-bold px-1 rounded ${textColor} bg-white/50`}>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${textColor} bg-white/70 shadow-sm`}>
               {statusLabel.slice(0, 4)}
             </span>
           )}
         </div>
-        <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <i className="fa-solid fa-pen text-slate-400 bg-white rounded-full p-1 shadow-sm text-xs" aria-hidden="true" />
-        </div>
+        {/* ステータスドット */}
+        {statusLabel && (
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2">
+            <div className={`w-1.5 h-1.5 rounded-full ${
+              statusLabel.includes('出勤') ? 'bg-orange-400'
+              : statusLabel === '有給' ? 'bg-emerald-400'
+              : statusLabel === '欠勤' ? 'bg-red-400'
+              : statusLabel === '祝日' ? 'bg-pink-400'
+              : 'bg-blue-400'
+            }`} />
+          </div>
+        )}
       </button>,
     );
   }
 
   return (
-    <div className="border border-slate-200 rounded-lg overflow-hidden mb-6">
-      <div className="grid grid-cols-7 bg-slate-100 border-b border-slate-200">
+    <div className="mb-6">
+      <div className="grid grid-cols-7 mb-2">
         {WEEK_LABELS.map((w, i) => (
           <div
             key={i}
             className={`text-center py-2 text-xs font-bold ${
-              i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-slate-600'
+              i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-400'
             }`}
           >
             {w}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7">{cells}</div>
+      <div className="grid grid-cols-7 gap-1">{cells}</div>
     </div>
   );
 }
