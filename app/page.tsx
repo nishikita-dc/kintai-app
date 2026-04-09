@@ -15,6 +15,7 @@ import ExceptionEditor from '@/app/components/ExceptionEditor';
 import PreviewTable from '@/app/components/PreviewTable';
 import DoctorSelectScreen from '@/app/components/DoctorSelectScreen';
 import SettingsModal from '@/app/components/SettingsModal';
+import { useFocusTrap } from '@/app/hooks/useFocusTrap';
 
 
 export default function Home() {
@@ -264,22 +265,28 @@ export default function Home() {
   // ── CSV ダウンロード ──────────────────────────────────────────────
   const downloadCsv = async () => {
     if (!generatedCsv) return;
-    const { default: Encoding } = await import('encoding-japanese');
-    const unicodeList: number[] = Array.from({ length: generatedCsv.length }, (_, i) =>
-      generatedCsv.charCodeAt(i),
-    );
-    const sjisCodeList = Encoding.convert(unicodeList, { to: 'SJIS', from: 'UNICODE' }) as number[];
-    const blob = new Blob([new Uint8Array(sjisCodeList)], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${year}${String(month).padStart(2, '0')}_${empId}_${empName}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const { default: Encoding } = await import('encoding-japanese');
+      const unicodeList: number[] = Array.from({ length: generatedCsv.length }, (_, i) =>
+        generatedCsv.charCodeAt(i),
+      );
+      const sjisCodeList = Encoding.convert(unicodeList, { to: 'SJIS', from: 'UNICODE' }) as number[];
+      const blob = new Blob([new Uint8Array(sjisCodeList)], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${year}${String(month).padStart(2, '0')}_${empId}_${empName}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('CSVダウンロードエラー:', err);
+      setConfirmError('CSVのダウンロードに失敗しました。ページを再読み込みしてください。');
+    }
   };
 
   // ── 確定・取消 ────────────────────────────────────────────────────
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const confirmDialogRef = useFocusTrap(useCallback(() => setShowConfirmDialog(false), []));
 
   const handleConfirm = useCallback(async () => {
     setShowConfirmDialog(false);
@@ -317,7 +324,11 @@ export default function Home() {
 
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
+  const [isCancelling, setIsCancelling] = useState(false);
+
   const handleCancelConfirm = useCallback(async () => {
+    if (isCancelling) return;
+    setIsCancelling(true);
     setConfirmError(null);
     try {
       const res = await fetch('/api/confirm', {
@@ -328,11 +339,15 @@ export default function Home() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setIsConfirmed(false);
       setConfirmedAt(null);
+      setGeneratedCsv(null);
+      setShowPreview(false);
     } catch (err) {
       console.error('確定取消エラー:', err);
       setConfirmError('確定の取消に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsCancelling(false);
     }
-  }, [empId, year, month]);
+  }, [empId, year, month, isCancelling]);
 
   // ── 即時送信 ──────────────────────────────────────────────────────
   const [isSending, setIsSending] = useState(false);
@@ -592,9 +607,8 @@ export default function Home() {
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowConfirmDialog(false); }}
-          onKeyDown={(e) => { if (e.key === 'Escape') setShowConfirmDialog(false); }}
         >
-          <div role="dialog" aria-modal="true" aria-label="確定確認" className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+          <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-label="確定確認" className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center border-4 border-brand-100">
                 <i className="fa-solid fa-paper-plane text-brand-500 text-xl" />

@@ -4,11 +4,12 @@ import type { ConfirmData } from '../../types';
 import { buildMonthlyEmailHtml, buildMonthlyEmailSubject } from '../../lib/emailTemplate';
 import type { SentRecord } from '../../types';
 import { kvConfirmMonthPrefix, kvSentKey } from '../../lib/kvKeys';
-import { authenticate, jsonResponse as jsonRes } from '../_shared/edgeHelpers';
+import { getCorsHeaders, authenticate, jsonResponse as jsonRes } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
   API_KEY: string;
+  ALLOWED_ORIGINS: string;
   SENDGRID_API_KEY: string;
   NOTIFY_EMAIL: string;
   SENDER_EMAIL: string;
@@ -23,19 +24,34 @@ function toBase64(str: string): string {
   return btoa(binary);
 }
 
+/** ConfirmData のランタイムバリデーション */
+function isValidConfirmData(data: unknown): data is ConfirmData {
+  if (typeof data !== 'object' || data === null) return false;
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.empId === 'string' &&
+    typeof d.empName === 'string' &&
+    typeof d.year === 'number' &&
+    typeof d.month === 'number' &&
+    typeof d.csv === 'string' &&
+    typeof d.confirmedAt === 'string'
+  );
+}
+
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
+  const cors = getCorsHeaders(request, env.ALLOWED_ORIGINS, 'POST, OPTIONS');
 
   if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204 });
+    return new Response(null, { status: 204, headers: cors });
   }
 
   if (!authenticate(request, env.API_KEY)) {
-    return jsonRes({ error: '認証に失敗しました' }, {}, 401);
+    return jsonRes({ error: '認証に失敗しました' }, cors, 401);
   }
 
   if (request.method !== 'POST') {
-    return jsonRes({ error: 'Method Not Allowed' }, {}, 405);
+    return jsonRes({ error: 'Method Not Allowed' }, cors, 405);
   }
 
   // 対象年月を取得（デフォルト: 現在のJST月）
@@ -63,7 +79,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const list = await env.KINTAI_DATA.list({ prefix });
 
   if (list.keys.length === 0) {
-    return jsonRes({ ok: true, message: `${targetYear}年${targetMonth}月分の確定データはありません`, sent: 0 }, {});
+    return jsonRes({ ok: true, message: `${targetYear}年${targetMonth}月分の確定データはありません`, sent: 0 }, cors);
   }
 
   const confirmedEntries: ConfirmData[] = [];
@@ -71,7 +87,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const raw = await env.KINTAI_DATA.get(key.name);
     if (raw) {
       try {
-        confirmedEntries.push(JSON.parse(raw) as ConfirmData);
+        const parsed = JSON.parse(raw);
+        if (isValidConfirmData(parsed)) {
+          confirmedEntries.push(parsed);
+        }
       } catch {
         /* skip invalid */
       }
@@ -79,7 +98,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   }
 
   if (confirmedEntries.length === 0) {
-    return jsonRes({ ok: true, message: '有効な確定データがありません', sent: 0 }, {});
+    return jsonRes({ ok: true, message: '有効な確定データがありません', sent: 0 }, cors);
   }
 
   // SendGrid API キーのチェック
@@ -157,7 +176,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       ok: true,
       message: `${confirmedEntries.length}名分のデータを ${notifyEmail} へ送信しました`,
       sent: confirmedEntries.length,
-    }, {});
+    }, cors);
   } catch (err) {
     return jsonRes({ error: 'メール送信中にエラーが発生しました', details: String(err) }, {}, 500);
   }

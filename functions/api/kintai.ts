@@ -3,7 +3,7 @@
 import type { AbsentRecord, TimeChange, KvData, PostBody } from '../../types';
 import { validateKvData } from '../../lib/validators';
 import { kvKintaiKey } from '../../lib/kvKeys';
-import { getCorsHeaders, authenticate, jsonResponse, isValidEmpId } from '../_shared/edgeHelpers';
+import { getCorsHeaders, authenticate, jsonResponse, isValidEmpId, isValidYearMonth } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -37,6 +37,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
     if (!isValidEmpId(empId)) {
       return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
+    }
+    if (!isValidYearMonth(Number(year), Number(month))) {
+      return jsonResponse({ error: 'year/month の値が不正です' }, cors, 400);
     }
 
     const key = kvKintaiKey(empId, year, month);
@@ -82,6 +85,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
     if (!isValidEmpId(empId)) {
       return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
+    }
+    if (!isValidYearMonth(year, month)) {
+      return jsonResponse({ error: 'year/month の値が不正です' }, cors, 400);
     }
 
     // POST ボディの data もバリデーション

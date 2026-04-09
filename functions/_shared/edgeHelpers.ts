@@ -60,6 +60,15 @@ export function isValidEmpId(empId: string): boolean {
   return EMP_ID_RE.test(empId);
 }
 
+// ── year/month バリデーション ──────────────────────────────────────
+/** year が 2000-2100、month が 1-12 の整数かチェック */
+export function isValidYearMonth(year: number, month: number): boolean {
+  return (
+    Number.isInteger(year) && year >= 2000 && year <= 2100 &&
+    Number.isInteger(month) && month >= 1 && month <= 12
+  );
+}
+
 // ── JSON レスポンス ───────────────────────────────────────────────────
 export function jsonResponse(
   body: unknown,

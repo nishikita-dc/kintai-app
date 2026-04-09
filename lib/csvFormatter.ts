@@ -44,9 +44,17 @@ export function buildKintaiCsv(
 ): string {
   const header = CSV_HEADER_LINES.join('\r\n') + '\r\n';
 
+  // CSV injection 防止: カンマ・改行・ダブルクォートを含む場合はクォート
+  const safeName = /[,"\r\n]/.test(empName)
+    ? `"${empName.replace(/"/g, '""')}"`
+    : empName;
+  const safeId = /[,"\r\n]/.test(empId)
+    ? `"${empId.replace(/"/g, '""')}"`
+    : empId;
+
   const dataLines = rows.flatMap(({ dateStr, start, end }) => [
-    `${empId},${empName},1,${dateStr}${start}`,
-    `${empId},${empName},2,${dateStr}${end}`,
+    `${safeId},${safeName},1,${dateStr}${start}`,
+    `${safeId},${safeName},2,${dateStr}${end}`,
   ]);
 
   // データ行がない月（全休など）でもヘッダーだけ返す

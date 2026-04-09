@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DOCTOR_LIST } from '@/lib/constants';
 import type { DoctorItem } from '@/types';
 
@@ -10,11 +10,21 @@ interface DoctorSelectScreenProps {
 
 export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [doctorList, setDoctorList] = useState<DoctorItem[]>(DOCTOR_LIST);
+
+  useEffect(() => {
+    fetch('/api/doctors')
+      .then((r) => r.json())
+      .then((data: unknown) => {
+        const d = data as { doctors?: DoctorItem[] };
+        if (d.doctors && d.doctors.length > 0) setDoctorList(d.doctors);
+      })
+      .catch(() => { /* デフォルトのまま */ });
+  }, []);
 
   const handleSelect = (doc: DoctorItem) => {
-    if (selectedId) return; // 選択処理中は無効
+    if (selectedId) return;
     setSelectedId(doc.id);
-    // 視覚フィードバックを見せてから画面遷移
     setTimeout(() => onSelect(doc), 600);
   };
 
@@ -36,7 +46,7 @@ export default function DoctorSelectScreen({ onSelect }: DoctorSelectScreenProps
 
         {/* ドクターカード一覧 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {DOCTOR_LIST.map((doc) => {
+          {doctorList.map((doc) => {
             const isSelected = selectedId === doc.id;
             const isOther = selectedId !== null && !isSelected;
             return (

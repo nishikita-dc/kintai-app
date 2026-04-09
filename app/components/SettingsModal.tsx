@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { getJapaneseHolidays, WEEK_DAYS_JA } from '@/lib/constants';
+import { useFocusTrap } from '@/app/hooks/useFocusTrap';
 
 interface SettingsModalProps {
   weekdayHoliday: number;
@@ -20,41 +20,7 @@ export default function SettingsModal({
   onDoctorChange,
   onClose,
 }: SettingsModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  // フォーカストラップ + Escキーで閉じる
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
-      if (e.key === 'Tab' && dialogRef.current) {
-        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    // 開いた瞬間に最初のフォーカス可能要素にフォーカス
-    const timer = setTimeout(() => {
-      dialogRef.current?.querySelector<HTMLElement>('button')?.focus();
-    }, 0);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      clearTimeout(timer);
-    };
-  }, [onClose]);
+  const dialogRef = useFocusTrap(onClose);
 
   const currentYear = new Date().getFullYear();
   const yearHolidays = getJapaneseHolidays(currentYear);

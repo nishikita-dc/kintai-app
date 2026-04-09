@@ -21,10 +21,9 @@ export function useAppStorage(): UseAppStorageReturn {
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorItem | null>(null);
 
-  // 年月は現在日付から自動設定
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  // 年月は現在日付から自動設定（遅延初期化でレンダリングごとのDate生成を回避）
+  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
   const [weekdayHoliday, setWeekdayHoliday] = useState(4);
 
   // localStorage から初期値を復元

@@ -119,10 +119,17 @@ export function useKvSync({
           month,
           data: { extraWorkDays, absentRecords, timeChanges },
         }),
-      }).catch((err) => {
-        setKvError('データの保存に失敗しました。通信環境を確認してください。');
-        console.warn('KV保存エラー:', err);
-      });
+      })
+        .then((res) => {
+          if (!res.ok) {
+            setKvError('データの保存に失敗しました。ページを再読み込みしてください。');
+            console.warn('KV保存HTTPエラー:', res.status);
+          }
+        })
+        .catch((err) => {
+          setKvError('データの保存に失敗しました。通信環境を確認してください。');
+          console.warn('KV保存エラー:', err);
+        });
     }, 1000);
 
     return () => clearTimeout(timer);
@@ -190,9 +197,13 @@ export function useConfigSync({
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ empId, weekdayHoliday }),
-      }).catch((err) => {
-        console.warn('ドクター設定保存エラー:', err);
-      });
+      })
+        .then((res) => {
+          if (!res.ok) console.warn('ドクター設定保存HTTPエラー:', res.status);
+        })
+        .catch((err) => {
+          console.warn('ドクター設定保存エラー:', err);
+        });
     }, 1000);
 
     return () => clearTimeout(timer);

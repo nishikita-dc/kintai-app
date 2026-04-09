@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { PreviewRow, Summary } from '@/types';
 import { ADMIN_NAME } from '@/lib/constants';
+import { useFocusTrap } from '@/app/hooks/useFocusTrap';
 
 interface PreviewTableProps {
   previewData: PreviewRow[];
@@ -60,6 +61,7 @@ export default function PreviewTable({
   sendResult,
 }: PreviewTableProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const cancelDialogRef = useFocusTrap(useCallback(() => setShowCancelDialog(false), []));
 
   return (
     <div className="mt-8 bg-white p-6 rounded-xl shadow-lg border border-brand-100 animation-fade-in relative">
@@ -199,7 +201,7 @@ export default function PreviewTable({
                       {isSending ? (
                         <><i className="fa-solid fa-spinner fa-spin" /> 送信中...</>
                       ) : (
-                        <><i className="fa-solid fa-paper-plane" /> 今すぐ送信</>
+                        <><i className="fa-solid fa-paper-plane" /> 全員分を今すぐ送信</>
                       )}
                     </button>
                   )}
@@ -278,8 +280,11 @@ export default function PreviewTable({
 
       {/* 確定取り消し確認ダイアログ */}
       {showCancelDialog && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCancelDialog(false); }}
+        >
+          <div ref={cancelDialogRef} role="dialog" aria-modal="true" aria-label="確定取消確認" className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center border-4 border-orange-100">
                 <i className="fa-solid fa-rotate-left text-orange-500 text-xl" />

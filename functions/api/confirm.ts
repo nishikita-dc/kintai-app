@@ -2,7 +2,7 @@
 
 import type { ConfirmData } from '../../types';
 import { kvConfirmKey } from '../../lib/kvKeys';
-import { getCorsHeaders, authenticate, jsonResponse, isValidEmpId } from '../_shared/edgeHelpers';
+import { getCorsHeaders, authenticate, jsonResponse, isValidEmpId, isValidYearMonth } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -36,6 +36,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
     if (!isValidEmpId(empId)) {
       return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
+    }
+    if (!isValidYearMonth(year, month)) {
+      return jsonResponse({ error: 'year/month の値が不正です' }, cors, 400);
     }
 
     const key = kvConfirmKey(empId, year, month);
@@ -71,6 +74,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       typeof csv !== 'string'
     ) {
       return jsonResponse({ error: 'empId, empName, year, month, csv は必須です' }, cors, 400);
+    }
+    if (!isValidEmpId(empId)) {
+      return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
     }
 
     // summary は省略可能。存在する場合だけ数値チェック
@@ -125,8 +131,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (typeof empId !== 'string' || typeof year !== 'number' || typeof month !== 'number') {
       return jsonResponse({ error: 'empId, year, month は必須です' }, cors, 400);
     }
+    if (!isValidEmpId(empId as string)) {
+      return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
+    }
 
-    const key = kvConfirmKey(empId, year, month);
+    const key = kvConfirmKey(empId as string, year as number, month as number);
     await env.KINTAI_DATA.delete(key);
 
     return jsonResponse({ ok: true }, cors);

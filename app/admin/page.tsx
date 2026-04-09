@@ -340,6 +340,16 @@ export default function AdminPage() {
   const [openDoctorId, setOpenDoctorId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
+  // Dr管理
+  const [customDoctors, setCustomDoctors] = useState<DoctorItem[]>(DOCTOR_LIST);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [savingDoctors, setSavingDoctors] = useState(false);
+  const [isManagingDoctors, setIsManagingDoctors] = useState(false);
+  const [editDoctorIdx, setEditDoctorIdx] = useState<number | null>(null);
+  const [editDoctorForm, setEditDoctorForm] = useState({ id: '', name: '' });
+  const [isAddingDoctor, setIsAddingDoctor] = useState(false);
+  const [newDoctorForm, setNewDoctorForm] = useState({ id: '', name: '' });
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   // セッションストレージからキーを復元
@@ -353,6 +363,20 @@ export default function AdminPage() {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, []);
+
+  // 認証後にKVからDrリストを取得
+  useEffect(() => {
+    if (!isAuthenticated || !adminKey) return;
+    setLoadingDoctors(true);
+    fetch('/api/admin?action=doctors', { headers: { 'X-Admin-Key': adminKey } })
+      .then((r) => r.json())
+      .then((data: unknown) => {
+        const d = data as { doctors?: DoctorItem[] };
+        if (d.doctors) setCustomDoctors(d.doctors);
+      })
+      .catch(() => { /* デフォルトのまま */ })
+      .finally(() => setLoadingDoctors(false));
+  }, [isAuthenticated, adminKey]);
 
   // 月一覧を取得
   const fetchMonths = useCallback(async (key: string) => {
@@ -413,6 +437,60 @@ export default function AdminPage() {
     return () => { cancelled = true; };
   }, [selectedMonth, isAuthenticated, adminKey]);
 
+  // ── Dr管理ハンドラ ──────────────────────────────────────────────
+
+  const saveDoctors = useCallback(async (doctors: DoctorItem[]) => {
+    setSavingDoctors(true);
+    try {
+      const res = await fetch('/api/admin?action=saveDoctors', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': adminKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify(doctors),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setCustomDoctors(doctors);
+    } catch {
+      alert('保存に失敗しました。再度お試しください。');
+    } finally {
+      setSavingDoctors(false);
+    }
+  }, [adminKey]);
+
+  const handleStartEditDoctor = (idx: number) => {
+    setEditDoctorIdx(idx);
+    setEditDoctorForm({ id: customDoctors[idx].id, name: customDoctors[idx].name });
+  };
+
+  const handleSaveEditDoctor = () => {
+    if (!editDoctorForm.id.trim() || !editDoctorForm.name.trim() || editDoctorIdx === null) return;
+    const updated = customDoctors.map((d, i) =>
+      i === editDoctorIdx ? { id: editDoctorForm.id.trim(), name: editDoctorForm.name.trim() } : d,
+    );
+    saveDoctors(updated);
+    setEditDoctorIdx(null);
+  };
+
+  const handleDeleteDoctor = (idx: number) => {
+    if (!confirm(`「${customDoctors[idx].name}」を削除しますか？`)) return;
+    saveDoctors(customDoctors.filter((_, i) => i !== idx));
+  };
+
+  const handleAddDoctor = () => {
+    if (!newDoctorForm.id.trim() || !newDoctorForm.name.trim()) return;
+    saveDoctors([...customDoctors, { id: newDoctorForm.id.trim(), name: newDoctorForm.name.trim() }]);
+    setNewDoctorForm({ id: '', name: '' });
+    setIsAddingDoctor(false);
+  };
+
+  const handleResetDoctors = () => {
+    if (!confirm('Dr一覧をデフォルト（初期設定）に戻しますか？')) return;
+    saveDoctors(DOCTOR_LIST);
+    setEditDoctorIdx(null);
+    setIsAddingDoctor(false);
+  };
+
+  // ── ログイン / ログアウト ───────────────────────────────────────────
+
   const handleLogin = useCallback(() => {
     const key = inputKey.trim();
     if (!key) return;
@@ -468,8 +546,9 @@ export default function AdminPage() {
     }
   };
 
-  const totalDoctors = DOCTOR_LIST.length;
+  const totalDoctors = customDoctors.length;
   const confirmedCount = statusData?.confirmed.length ?? 0;
+  const notConfirmedList = statusData?.notConfirmed ?? [];
   const progressPercent = totalDoctors > 0 ? Math.round((confirmedCount / totalDoctors) * 100) : 0;
 
   // ── ログイン画面 ────────────────────────────────────────────────────
@@ -543,6 +622,142 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+
+        {/* Dr一覧管理 */}
+        <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => setIsManagingDoctors(!isManagingDoctors)}
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">⚙ Dr一覧管理</span>
+              {loadingDoctors
+                ? <span className="text-xs text-gray-400 animate-pulse">読み込み中...</span>
+                : <span className="text-xs text-gray-400">{customDoctors.length}名</span>
+              }
+              {savingDoctors && (
+                <span className="text-xs bg-indigo-50 text-indigo-500 border border-indigo-100 rounded-full px-2 py-0.5 animate-pulse">
+                  保存中...
+                </span>
+              )}
+            </div>
+            <span className={`text-gray-400 text-sm transition-transform duration-200 ${isManagingDoctors ? 'rotate-180' : ''}`}>▼</span>
+          </button>
+
+          {isManagingDoctors && (
+            <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+              <p className="text-xs text-gray-400">
+                ここで編集した内容はすぐにアプリに反映されます。
+              </p>
+
+              {/* Dr一覧 */}
+              <div className="space-y-1.5">
+                {customDoctors.map((doctor, idx) => (
+                  <div key={idx} className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-100 bg-gray-50">
+                    {editDoctorIdx === idx ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editDoctorForm.id}
+                          onChange={(e) => setEditDoctorForm((f) => ({ ...f, id: e.target.value }))}
+                          placeholder="従業員番号"
+                          className="w-24 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                        />
+                        <input
+                          type="text"
+                          value={editDoctorForm.name}
+                          onChange={(e) => setEditDoctorForm((f) => ({ ...f, name: e.target.value }))}
+                          placeholder="名前"
+                          className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                          onKeyDown={(e) => e.key === 'Enter' && handleSaveEditDoctor()}
+                        />
+                        <button
+                          onClick={handleSaveEditDoctor}
+                          className="text-xs bg-indigo-600 text-white rounded-lg px-3 py-1 hover:bg-indigo-700 transition-colors"
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={() => setEditDoctorIdx(null)}
+                          className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1"
+                        >
+                          ✕
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs text-gray-400 w-16 flex-shrink-0 font-mono">{doctor.id}</span>
+                        <span className="flex-1 text-sm font-medium text-gray-700">{doctor.name}</span>
+                        <button
+                          onClick={() => handleStartEditDoctor(idx)}
+                          className="text-xs text-indigo-500 hover:text-indigo-700 border border-indigo-100 rounded-lg px-2.5 py-1 hover:border-indigo-300 transition-colors"
+                        >
+                          編集
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDoctor(idx)}
+                          className="text-xs text-red-400 hover:text-red-600 border border-red-100 rounded-lg px-2.5 py-1 hover:border-red-300 transition-colors"
+                        >
+                          削除
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* 追加フォーム */}
+              {isAddingDoctor ? (
+                <div className="flex items-center gap-2 p-2.5 rounded-xl border border-indigo-100 bg-indigo-50">
+                  <input
+                    type="text"
+                    value={newDoctorForm.id}
+                    onChange={(e) => setNewDoctorForm((f) => ({ ...f, id: e.target.value }))}
+                    placeholder="従業員番号"
+                    className="w-24 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  />
+                  <input
+                    type="text"
+                    value={newDoctorForm.name}
+                    onChange={(e) => setNewDoctorForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="名前（例: 山本）"
+                    className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddDoctor()}
+                  />
+                  <button
+                    onClick={handleAddDoctor}
+                    disabled={!newDoctorForm.id.trim() || !newDoctorForm.name.trim()}
+                    className="text-xs bg-indigo-600 text-white rounded-lg px-3 py-1 hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                  >
+                    追加
+                  </button>
+                  <button
+                    onClick={() => { setIsAddingDoctor(false); setNewDoctorForm({ id: '', name: '' }); }}
+                    className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsAddingDoctor(true)}
+                  className="w-full flex items-center justify-center gap-1.5 text-xs text-indigo-600 border border-dashed border-indigo-200 rounded-xl py-2.5 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+                >
+                  ＋ Drを追加
+                </button>
+              )}
+
+              {/* リセット */}
+              <button
+                onClick={handleResetDoctors}
+                disabled={savingDoctors}
+                className="text-xs text-gray-400 hover:text-red-500 transition-colors underline underline-offset-2 disabled:opacity-40"
+              >
+                初期設定に戻す
+              </button>
+            </div>
+          )}
+        </section>
 
         {/* 月選択 */}
         <section className="bg-white rounded-2xl border border-gray-200 p-5">
@@ -661,16 +876,16 @@ export default function AdminPage() {
                 )}
 
                 {/* 未提出 */}
-                {statusData.notConfirmed.length > 0 && (
+                {notConfirmedList.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2.5">
                       <span className="text-sm font-semibold text-gray-500">⏳ 未提出</span>
                       <span className="bg-gray-100 text-gray-500 text-xs font-bold rounded-full px-2 py-0.5">
-                        {statusData.notConfirmed.length}名
+                        {notConfirmedList.length}名
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {statusData.notConfirmed.map((doctor) => (
+                      {notConfirmedList.map((doctor) => (
                         <div key={doctor.id} className="bg-gray-100 text-gray-600 rounded-lg px-3 py-1.5 text-sm font-medium">
                           {doctor.name}
                         </div>

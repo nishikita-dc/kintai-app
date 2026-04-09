@@ -71,6 +71,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (typeof b.empId !== 'string' || typeof b.weekdayHoliday !== 'number') {
       return jsonResponse({ error: 'empId(string), weekdayHoliday(number) は必須です' }, cors, 400);
     }
+    if (!isValidEmpId(b.empId)) {
+      return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
+    }
 
     const wd = b.weekdayHoliday as number;
     if (wd < 0 || wd > 6 || !Number.isInteger(wd)) {

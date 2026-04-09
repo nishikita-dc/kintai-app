@@ -1,11 +1,15 @@
 /**
  * Cloudflare KV キー生成ルール（SSOT）
  *
+ * doctor_list                      ドクターリスト（管理画面で編集可能）
  * kintai:{empId}:{YYYY-MM}         勤怠例外データ
  * confirmed:{YYYY-MM}:{empId}      確定データ
  * sent:{YYYY-MM}:{empId}           メール送信済み記録
  * config:{empId}                   ドクター個別設定
  */
+
+/** ドクターリストのKVキー（管理画面から編集可能） */
+export const KV_DOCTOR_LIST_KEY = 'doctor_list';
 
 function pad(month: number | string): string {
   return String(Number(month)).padStart(2, '0');

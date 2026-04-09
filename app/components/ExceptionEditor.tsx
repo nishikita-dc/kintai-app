@@ -153,7 +153,7 @@ export default function ExceptionEditor({
                       value={type}
                       checked={tempAbsentType === type}
                       onChange={() => setTempAbsentType(type as UserAbsentType)}
-                      className="hidden"
+                      className="sr-only"
                     />
                     {type}
                   </label>

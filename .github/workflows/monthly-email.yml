@@ -43,10 +43,17 @@ jobs:
         env:
           KINTAI_API_URL: ${{ secrets.KINTAI_API_URL }}
           KINTAI_API_KEY: ${{ secrets.KINTAI_API_KEY }}
+          INPUT_YEAR: ${{ github.event.inputs.year }}
+          INPUT_MONTH: ${{ github.event.inputs.month }}
         run: |
           BODY='{}'
-          if [ -n "${{ github.event.inputs.year }}" ] && [ -n "${{ github.event.inputs.month }}" ]; then
-            BODY="{\"year\":${{ github.event.inputs.year }},\"month\":${{ github.event.inputs.month }}}"
+          if [ -n "${INPUT_YEAR}" ] && [ -n "${INPUT_MONTH}" ]; then
+            # 数字のみであることを検証（インジェクション防止）
+            if ! echo "${INPUT_YEAR}" | grep -qE '^[0-9]{4}$' || ! echo "${INPUT_MONTH}" | grep -qE '^[0-9]{1,2}$'; then
+              echo "::error::year/month の入力値が不正です: year=${INPUT_YEAR}, month=${INPUT_MONTH}"
+              exit 1
+            fi
+            BODY="{\"year\":${INPUT_YEAR},\"month\":${INPUT_MONTH}}"
           fi
 
           echo "送信先: ${KINTAI_API_URL}/api/send-monthly"
