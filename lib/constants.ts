@@ -1,61 +1,76 @@
 import type { DoctorItem } from '@/types';
+import { getHolidaysForYear } from './holidays';
 
-export const JAPANESE_HOLIDAYS: Record<string, string> = {
-  '2025-01-01': '元日',
-  '2025-01-13': '成人の日',
-  '2025-02-11': '建国記念の日',
-  '2025-02-23': '天皇誕生日',
-  '2025-02-24': '振替休日',
-  '2025-03-20': '春分の日',
-  '2025-04-29': '昭和の日',
-  '2025-05-03': '憲法記念日',
-  '2025-05-04': 'みどりの日',
-  '2025-05-05': 'こどもの日',
-  '2025-05-06': '振替休日',
-  '2025-07-21': '海の日',
-  '2025-08-11': '山の日',
-  '2025-09-15': '敬老の日',
-  '2025-09-23': '秋分の日',
-  '2025-10-13': 'スポーツの日',
-  '2025-11-03': '文化の日',
-  '2025-11-23': '勤労感謝の日',
-  '2025-11-24': '振替休日',
-  '2026-01-01': '元日',
-  '2026-01-12': '成人の日',
-  '2026-02-11': '建国記念の日',
-  '2026-02-23': '天皇誕生日',
-  '2026-03-20': '春分の日',
-  '2026-04-29': '昭和の日',
-  '2026-05-03': '憲法記念日',
-  '2026-05-04': 'みどりの日',
-  '2026-05-05': 'こどもの日',
-  '2026-05-06': '振替休日',
-  '2026-07-20': '海の日',
-  '2026-08-11': '山の日',
-  '2026-09-21': '敬老の日',
-  '2026-09-23': '秋分の日',
-  '2026-10-12': 'スポーツの日',
-  '2026-11-03': '文化の日',
-  '2026-11-23': '勤労感謝の日',
-  '2026-11-24': '振替休日',
-  // 2027年
-  '2027-01-01': '元日',
-  '2027-01-11': '成人の日',
-  '2027-02-11': '建国記念の日',
-  '2027-02-23': '天皇誕生日',
-  '2027-03-21': '春分の日',
-  '2027-03-22': '振替休日',
-  '2027-04-29': '昭和の日',
-  '2027-05-03': '憲法記念日',
-  '2027-05-04': 'みどりの日',
-  '2027-05-05': 'こどもの日',
-  '2027-07-19': '海の日',
-  '2027-08-11': '山の日',
-  '2027-09-20': '敬老の日',
-  '2027-09-23': '秋分の日',
-  '2027-10-11': 'スポーツの日',
-  '2027-11-03': '文化の日',
-  '2027-11-23': '勤労感謝の日',
+// ── 祝日（動的計算 + キャッシュ） ─────────────────────────────────
+const holidayCache = new Map<number, Record<string, string>>();
+
+/**
+ * 指定年の祝日マップを取得する（キャッシュ付き）。
+ * 複数年にまたがるアクセスにも対応。
+ */
+export function getJapaneseHolidays(year: number): Record<string, string> {
+  let cached = holidayCache.get(year);
+  if (!cached) {
+    cached = getHolidaysForYear(year);
+    holidayCache.set(year, cached);
+  }
+  return cached;
+}
+
+/**
+ * 後方互換: 既存コードの JAPANESE_HOLIDAYS[dateStr] パターンをサポートするプロキシ。
+ * holidays["2026-04-29"] のようにアクセスすると、その年のマップから自動取得する。
+ */
+export const JAPANESE_HOLIDAYS: Record<string, string> = new Proxy(
+  {} as Record<string, string>,
+  {
+    get(_target, prop: string) {
+      if (typeof prop !== 'string' || !/^\d{4}-/.test(prop)) return undefined;
+      const year = parseInt(prop.slice(0, 4), 10);
+      return getJapaneseHolidays(year)[prop];
+    },
+    has(_target, prop: string) {
+      if (typeof prop !== 'string' || !/^\d{4}-/.test(prop)) return false;
+      const year = parseInt(prop.slice(0, 4), 10);
+      return prop in getJapaneseHolidays(year);
+    },
+    ownKeys() {
+      // entries() 用: 現在年 ± 1年分のキーを返す
+      const currentYear = new Date().getFullYear();
+      const keys: string[] = [];
+      for (let y = currentYear - 1; y <= currentYear + 1; y++) {
+        keys.push(...Object.keys(getJapaneseHolidays(y)));
+      }
+      return keys;
+    },
+    getOwnPropertyDescriptor(_target, prop: string) {
+      if (typeof prop !== 'string' || !/^\d{4}-/.test(prop)) return undefined;
+      const year = parseInt(prop.slice(0, 4), 10);
+      const val = getJapaneseHolidays(year)[prop];
+      if (val === undefined) return undefined;
+      return { configurable: true, enumerable: true, value: val };
+    },
+  },
+);
+
+// ── デフォルト勤務時間 ────────────────────────────────────────────
+export interface DefaultTimes {
+  inTime: string;     // "09:00"
+  outTime: string;    // "19:30"
+}
+
+/**
+ * 曜日ごとのデフォルト出退勤時刻。
+ * 水曜(3)と土曜(6)は早い退勤。
+ */
+export const DEFAULT_WORK_TIMES: Record<number, DefaultTimes> = {
+  0: { inTime: '09:00', outTime: '19:30' }, // 日（通常は休み）
+  1: { inTime: '09:00', outTime: '19:30' }, // 月
+  2: { inTime: '09:00', outTime: '19:30' }, // 火
+  3: { inTime: '09:00', outTime: '17:30' }, // 水
+  4: { inTime: '09:00', outTime: '19:30' }, // 木
+  5: { inTime: '09:00', outTime: '19:30' }, // 金
+  6: { inTime: '09:00', outTime: '17:30' }, // 土
 };
 
 export const DOCTOR_LIST: DoctorItem[] = [

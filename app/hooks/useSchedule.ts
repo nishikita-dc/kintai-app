@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { AbsentRecord, TimeChange } from '@/types';
-import { JAPANESE_HOLIDAYS } from '@/lib/constants';
+import { getJapaneseHolidays } from '@/lib/constants';
 
 interface UseScheduleParams {
   year: number;
@@ -44,8 +44,19 @@ export function useSchedule({
   useEffect(() => {
     if (!isInitialized) return;
 
+    // 動的に祝日を取得（隣接月も含めて月またぎの週を正しく判定）
+    const yearHolidays = getJapaneseHolidays(year);
+    // 前月・翌月が別年の場合にも対応
+    const prevYear = month === 1 ? year - 1 : year;
+    const nextYear = month === 12 ? year + 1 : year;
+    const adjacentHolidays: Record<string, string> = {
+      ...(prevYear !== year ? getJapaneseHolidays(prevYear) : {}),
+      ...yearHolidays,
+      ...(nextYear !== year ? getJapaneseHolidays(nextYear) : {}),
+    };
+
     const prefix = `${year}-${String(month).padStart(2, '0')}`;
-    const holidaysInMonth: AbsentRecord[] = Object.entries(JAPANESE_HOLIDAYS)
+    const holidaysInMonth: AbsentRecord[] = Object.entries(yearHolidays)
       .filter(([date]) => date.startsWith(prefix))
       .map(([date, name]) => ({ date, type: '祝日' as const, name }));
 
@@ -57,7 +68,9 @@ export function useSchedule({
       const dayOfWeek = currentDate.getDay();
       const dateDisplay = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
-      if (dayOfWeek === weekdayHoliday && !JAPANESE_HOLIDAYS[dateDisplay]) {
+      // 定休曜日で、かつその日自体が祝日でない場合に振替出勤を検討
+      if (dayOfWeek === weekdayHoliday && !adjacentHolidays[dateDisplay]) {
+        // その週（日〜土）に祝日があるかチェック（月またぎ対応）
         const sun = new Date(currentDate);
         sun.setDate(currentDate.getDate() - dayOfWeek);
 
@@ -65,8 +78,8 @@ export function useSchedule({
         for (let i = 0; i < 7; i++) {
           const check = new Date(sun);
           check.setDate(sun.getDate() + i);
-          const k = `${check.getFullYear()}-${String(check.getMonth() + 1).padStart(2, '0')}-${String(check.getDate()).padStart(2, '0')}`;
-          if (JAPANESE_HOLIDAYS[k]) {
+          const ck = `${check.getFullYear()}-${String(check.getMonth() + 1).padStart(2, '0')}-${String(check.getDate()).padStart(2, '0')}`;
+          if (adjacentHolidays[ck]) {
             hasHolidayInWeek = true;
             break;
           }
@@ -84,11 +97,13 @@ export function useSchedule({
 
   const toggleDateStatus = useCallback(
     (dateStr: string) => {
+      const dateYear = parseInt(dateStr.slice(0, 4), 10);
+      const yearHolidays = getJapaneseHolidays(dateYear);
       const dayOfWeek = new Date(dateStr).getDay();
       const isExtra = extraWorkDays.includes(dateStr);
       const absentRec = absentRecords.find((r) => r.date === dateStr);
       const isHoliday = holidays.includes(dayOfWeek);
-      const isNationalHoliday = !!JAPANESE_HOLIDAYS[dateStr];
+      const isNationalHoliday = !!yearHolidays[dateStr];
       const currentlyOff = !!absentRec || (!isExtra && (isHoliday || isNationalHoliday));
 
       if (currentlyOff) {

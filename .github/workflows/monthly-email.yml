@@ -22,14 +22,19 @@ jobs:
         id: check
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            today=$(date -u +%d)
-            # 翌日の日付が1日なら今日が月末
-            tomorrow=$(date -u -d "+1 day" +%d)
-            if [ "$tomorrow" != "01" ]; then
+            # JST (UTC+9) での日付を使って判定
+            today_day=$(TZ=Asia/Tokyo date +%d)
+            today_month=$(TZ=Asia/Tokyo date +%m)
+            # 当月の最終日を算出（date コマンドの「翌月0日」トリック）
+            today_year=$(TZ=Asia/Tokyo date +%Y)
+            last_day=$(date -d "${today_year}-${today_month}-01 +1 month -1 day" +%d 2>/dev/null \
+              || python3 -c "import calendar; print(calendar.monthrange(${today_year}, ${today_month})[1])")
+            if [ "$today_day" != "$last_day" ]; then
               echo "skip=true" >> "$GITHUB_OUTPUT"
-              echo "今日は月末日ではないためスキップ (${today}日)"
+              echo "今日は月末日ではないためスキップ (${today_month}/${today_day}、月末は${last_day}日)"
               exit 0
             fi
+            echo "月末日を確認 (${today_month}/${today_day})"
           fi
           echo "skip=false" >> "$GITHUB_OUTPUT"
 

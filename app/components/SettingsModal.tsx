@@ -1,6 +1,6 @@
 'use client';
 
-import { JAPANESE_HOLIDAYS } from '@/lib/constants';
+import { getJapaneseHolidays } from '@/lib/constants';
 
 interface SettingsModalProps {
   weekdayHoliday: number;
@@ -20,8 +20,8 @@ export default function SettingsModal({
   onClose,
 }: SettingsModalProps) {
   const currentYear = new Date().getFullYear();
-  const allHolidaysList = Object.entries(JAPANESE_HOLIDAYS)
-    .filter(([date]) => date.startsWith(`${currentYear}-`))
+  const yearHolidays = getJapaneseHolidays(currentYear);
+  const allHolidaysList = Object.entries(yearHolidays)
     .map(([date, name]) => ({ date, name }))
     .sort((a, b) => a.date.localeCompare(b.date));
 

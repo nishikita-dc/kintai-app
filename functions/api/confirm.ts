@@ -1,18 +1,11 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import type { ConfirmData } from '../../types';
+
 interface Env {
   KINTAI_DATA: KVNamespace;
   API_KEY: string;
   ALLOWED_ORIGINS: string;
-}
-
-interface ConfirmData {
-  empId: string;
-  empName: string;
-  year: number;
-  month: number;
-  csv: string;
-  confirmedAt: string;
 }
 
 function getCorsHeaders(request: Request, env: Env): Record<string, string> {
@@ -95,7 +88,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return jsonResponse({ error: '無効なJSONです' }, cors, 400);
     }
 
-    const { empId, empName, year, month, csv } = body;
+    const { empId, empName, year, month, csv, summary } = body;
     if (
       typeof empId !== 'string' ||
       typeof empName !== 'string' ||
@@ -106,9 +99,39 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return jsonResponse({ error: 'empId, empName, year, month, csv は必須です' }, cors, 400);
     }
 
+    // summary は省略可能。存在する場合だけ数値チェック
+    type SummaryShape = ConfirmData['summary'];
+    let validatedSummary: SummaryShape;
+    if (summary !== undefined && typeof summary === 'object' && summary !== null) {
+      const s = summary as Record<string, unknown>;
+      if (
+        typeof s.workDays === 'number' &&
+        typeof s.extraDays === 'number' &&
+        typeof s.absentPaid === 'number' &&
+        typeof s.absentUnpaid === 'number' &&
+        typeof s.absentSub === 'number'
+      ) {
+        validatedSummary = {
+          workDays: s.workDays,
+          extraDays: s.extraDays,
+          absentPaid: s.absentPaid,
+          absentUnpaid: s.absentUnpaid,
+          absentSub: s.absentSub,
+        };
+      }
+    }
+
     const confirmedAt = new Date().toISOString();
     const key = buildConfirmKey(empId, year, month);
-    const data: ConfirmData = { empId, empName, year, month, csv, confirmedAt };
+    const data: ConfirmData = {
+      empId,
+      empName,
+      year,
+      month,
+      csv,
+      confirmedAt,
+      ...(validatedSummary !== undefined ? { summary: validatedSummary } : {}),
+    };
 
     await env.KINTAI_DATA.put(key, JSON.stringify(data));
 

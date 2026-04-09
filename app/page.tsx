@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { PreviewRow, Summary, DoctorItem } from '@/types';
-import { JAPANESE_HOLIDAYS } from '@/lib/constants';
+import { JAPANESE_HOLIDAYS, DEFAULT_WORK_TIMES } from '@/lib/constants';
+import { buildKintaiCsv } from '@/lib/csvFormatter';
+import type { CsvWorkRow } from '@/lib/csvFormatter';
 import { apiHeaders } from '@/lib/api';
 import { useAppStorage } from '@/app/hooks/useAppStorage';
 import { useSchedule } from '@/app/hooks/useSchedule';
@@ -169,14 +171,8 @@ export default function Home() {
   // ── データ生成 ────────────────────────────────────────────────────
   const generateData = useCallback(() => {
     const previewRows: PreviewRow[] = [];
+    const csvRows: CsvWorkRow[] = [];
     const daysInMonth = new Date(year, month, 0).getDate();
-
-    let csvContent = '';
-    csvContent += '#従業員コード*,名前*(従業員コード、名前はどちらか必須),打刻種別コード*,打刻日時*\r\n';
-    csvContent += '#（注）*は必須項目です。最大登録数は1回あたり1000件です。,,,\r\n';
-    csvContent +=
-      '#先頭が#から始まる行は読み込まれません。最終行は改行で終了して下さい。また、下記サンプル行は削除してご使用下さい。,,,\r\n';
-    csvContent += '#「打刻種別コード」出勤1、退勤2,,,\r\n';
 
     let countWork = 0;
     let countExtra = 0;
@@ -232,8 +228,9 @@ export default function Home() {
         countWork++;
         if (isExtraWork) countExtra++;
 
-        let start = '0900';
-        let end = dayOfWeek === 3 || dayOfWeek === 6 ? '1730' : '1930';
+        const defaults = DEFAULT_WORK_TIMES[dayOfWeek] ?? DEFAULT_WORK_TIMES[1];
+        let start = defaults.inTime.replace(':', '');
+        let end = defaults.outTime.replace(':', '');
 
         const changeRec = timeChanges.find((c) => c.date === dateDisplay);
         if (changeRec) {
@@ -242,8 +239,7 @@ export default function Home() {
           if (status === '通常' || status === '祝日振替診療') status = '時間変更';
         }
 
-        csvContent += `${empId},${empName},1,${dateStr}${start}\r\n`;
-        csvContent += `${empId},${empName},2,${dateStr}${end}\r\n`;
+        csvRows.push({ dateStr, start, end });
 
         previewRows.push({
           date: `${Number(m)}/${Number(dt)}`,
@@ -257,7 +253,7 @@ export default function Home() {
       }
     }
 
-    setGeneratedCsv(csvContent);
+    setGeneratedCsv(buildKintaiCsv(empId, empName, csvRows));
     setPreviewData(previewRows);
     setSummary({
       workDays: countWork,
@@ -302,7 +298,20 @@ export default function Home() {
       const res = await fetch('/api/confirm', {
         method: 'POST',
         headers: apiHeaders(),
-        body: JSON.stringify({ empId, empName, year, month, csv: generatedCsv ?? '' }),
+        body: JSON.stringify({
+          empId,
+          empName,
+          year,
+          month,
+          csv: generatedCsv ?? '',
+          summary: {
+            workDays: summary.workDays,
+            extraDays: summary.extraDays,
+            absentPaid: summary.absentPaid,
+            absentUnpaid: summary.absentUnpaid,
+            absentSub: summary.absentSub,
+          },
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = (await res.json()) as { ok: boolean; confirmedAt: string };

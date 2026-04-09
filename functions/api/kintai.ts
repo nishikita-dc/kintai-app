@@ -1,34 +1,12 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import type { AbsentRecord, TimeChange, KvData, PostBody } from '../../types';
+import { validateKvData } from '../../lib/validators';
+
 interface Env {
   KINTAI_DATA: KVNamespace;
   API_KEY: string;
   ALLOWED_ORIGINS: string; // カンマ区切り: "https://example.com,https://dev.example.com"
-}
-
-interface AbsentRecord {
-  date: string;
-  type: '有給' | '欠勤' | '振替休日' | '祝日';
-  name?: string;
-}
-
-interface TimeChange {
-  date: string;
-  inTime: string;
-  outTime: string;
-}
-
-interface KvData {
-  extraWorkDays: string[];
-  absentRecords: AbsentRecord[];
-  timeChanges: TimeChange[];
-}
-
-interface PostBody {
-  empId: string;
-  year: number;
-  month: number;
-  data: KvData;
 }
 
 // ── CORS: 許可オリジンのみ ──────────────────────────
@@ -69,55 +47,6 @@ function buildKvKey(empId: string, year: string | number, month: string | number
   return `kintai:${empId}:${year}-${monthStr}`;
 }
 
-// ── KvData のランタイムバリデーション ──────────────────
-const ABSENT_TYPES = new Set(['有給', '欠勤', '振替休日', '祝日']);
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
-
-function isAbsentRecord(v: unknown): v is AbsentRecord {
-  if (typeof v !== 'object' || v === null) return false;
-  const r = v as Record<string, unknown>;
-  return (
-    typeof r.date === 'string' &&
-    DATE_RE.test(r.date) &&
-    typeof r.type === 'string' &&
-    ABSENT_TYPES.has(r.type) &&
-    (r.name === undefined || typeof r.name === 'string')
-  );
-}
-
-function isTimeChange(v: unknown): v is TimeChange {
-  if (typeof v !== 'object' || v === null) return false;
-  const r = v as Record<string, unknown>;
-  return (
-    typeof r.date === 'string' &&
-    DATE_RE.test(r.date) &&
-    typeof r.inTime === 'string' &&
-    TIME_RE.test(r.inTime) &&
-    typeof r.outTime === 'string' &&
-    TIME_RE.test(r.outTime)
-  );
-}
-
-function validateKvData(data: unknown): KvData | null {
-  if (typeof data !== 'object' || data === null) return null;
-  const d = data as Record<string, unknown>;
-
-  if (!Array.isArray(d.extraWorkDays)) return null;
-  if (!d.extraWorkDays.every((v: unknown) => typeof v === 'string' && DATE_RE.test(v))) return null;
-
-  if (!Array.isArray(d.absentRecords)) return null;
-  if (!d.absentRecords.every(isAbsentRecord)) return null;
-
-  if (!Array.isArray(d.timeChanges)) return null;
-  if (!d.timeChanges.every(isTimeChange)) return null;
-
-  return {
-    extraWorkDays: d.extraWorkDays as string[],
-    absentRecords: d.absentRecords as AbsentRecord[],
-    timeChanges: d.timeChanges as TimeChange[],
-  };
-}
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;

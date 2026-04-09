@@ -39,3 +39,25 @@ export interface KvData {
   absentRecords: AbsentRecord[];
   timeChanges: TimeChange[];
 }
+
+export interface PostBody {
+  empId: string;
+  year: number;
+  month: number;
+  data: KvData;
+}
+
+export interface ConfirmData {
+  empId: string;
+  empName: string;
+  year: number;
+  month: number;
+  csv: string;
+  confirmedAt: string;
+  /** 確定時点の集計サマリー（旧データとの後方互換のため省略可） */
+  summary?: Pick<Summary, 'workDays' | 'extraDays' | 'absentPaid' | 'absentUnpaid' | 'absentSub'>;
+}
+
+export interface DoctorConfig {
+  weekdayHoliday: number;
+}

@@ -1,20 +1,14 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import type { ConfirmData } from '../../types';
+import { buildMonthlyEmailHtml, buildMonthlyEmailSubject } from '../../lib/emailTemplate';
+
 interface Env {
   KINTAI_DATA: KVNamespace;
   API_KEY: string;
   SENDGRID_API_KEY: string;
   NOTIFY_EMAIL: string;
   SENDER_EMAIL: string;
-}
-
-interface ConfirmData {
-  empId: string;
-  empName: string;
-  year: number;
-  month: number;
-  csv: string;
-  confirmedAt: string;
 }
 
 function authenticate(request: Request, env: Env): boolean {
@@ -30,21 +24,6 @@ function toBase64(str: string): string {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
-}
-
-function formatJST(isoStr: string): string {
-  try {
-    return new Date(isoStr).toLocaleString('ja-JP', {
-      timeZone: 'Asia/Tokyo',
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return isoStr;
-  }
 }
 
 function jsonRes(body: unknown, status = 200): Response {
@@ -151,51 +130,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     };
   });
 
-  // HTMLメール本文を構築
-  const doctorRows = confirmedEntries
-    .map(
-      (e) =>
-        `<tr>
-          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#334155;">${e.empId}</td>
-          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#334155;font-weight:600;">${e.empName}</td>
-          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:13px;">${formatJST(e.confirmedAt)}</td>
-        </tr>`,
-    )
-    .join('');
+  const htmlBody = buildMonthlyEmailHtml({
+    year: targetYear,
+    month: targetMonth,
+    entries: confirmedEntries,
+  });
 
-  const htmlBody = `
-<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans',sans-serif;max-width:600px;margin:0 auto;background:#f8fafc;">
-  <div style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);color:white;padding:28px 24px;border-radius:12px 12px 0 0;">
-    <h2 style="margin:0;font-size:18px;font-weight:700;">🦷 勤怠管理アプリ</h2>
-    <p style="margin:6px 0 0;opacity:0.85;font-size:13px;">スター歯科クリニック 西宮北口駅前院</p>
-  </div>
-  <div style="background:white;padding:28px 24px;border:1px solid #e2e8f0;border-top:none;">
-    <h3 style="color:#1e293b;margin:0 0 8px;font-size:16px;">
-      【${targetYear}年${targetMonth}月分】勤怠データ
-    </h3>
-    <p style="color:#64748b;font-size:14px;line-height:1.7;margin:0 0 20px;">
-      以下 <strong>${confirmedEntries.length}名</strong> のドクターの勤怠データが確定されました。<br>
-      CSVファイルを添付していますのでご確認ください。
-    </p>
-    <table style="width:100%;border-collapse:collapse;font-size:14px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
-      <thead>
-        <tr style="background:#f1f5f9;">
-          <th style="padding:10px 12px;text-align:left;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0;">従業員コード</th>
-          <th style="padding:10px 12px;text-align:left;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0;">名前</th>
-          <th style="padding:10px 12px;text-align:left;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e2e8f0;">確定日時</th>
-        </tr>
-      </thead>
-      <tbody>${doctorRows}</tbody>
-    </table>
-  </div>
-  <div style="padding:16px 24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;background:#f8fafc;">
-    <p style="color:#94a3b8;font-size:11px;margin:0;text-align:center;">
-      このメールは勤怠管理アプリから自動送信されています
-    </p>
-  </div>
-</div>`;
-
-  const subject = `【勤怠管理】${targetYear}年${targetMonth}月分 勤怠データ（${confirmedEntries.length}名分）`;
+  const subject = buildMonthlyEmailSubject(targetYear, targetMonth, confirmedEntries.length);
 
   // SendGrid API でメール送信
   try {

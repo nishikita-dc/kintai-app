@@ -1,13 +1,11 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import type { DoctorConfig } from '../../types';
+
 interface Env {
   KINTAI_DATA: KVNamespace;
   API_KEY: string;
   ALLOWED_ORIGINS: string;
-}
-
-interface DoctorConfig {
-  weekdayHoliday: number;
 }
 
 function getCorsHeaders(request: Request, env: Env): Record<string, string> {
