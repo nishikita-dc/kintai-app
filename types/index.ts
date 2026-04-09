@@ -61,3 +61,11 @@ export interface ConfirmData {
 export interface DoctorConfig {
   weekdayHoliday: number;
 }
+
+/** 月末メール送信完了の記録 */
+export interface SentRecord {
+  empId: string;
+  year: number;
+  month: number;
+  sentAt: string;
+}

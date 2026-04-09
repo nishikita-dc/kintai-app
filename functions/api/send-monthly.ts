@@ -2,7 +2,8 @@
 
 import type { ConfirmData } from '../../types';
 import { buildMonthlyEmailHtml, buildMonthlyEmailSubject } from '../../lib/emailTemplate';
-import { kvConfirmMonthPrefix } from '../../lib/kvKeys';
+import type { SentRecord } from '../../types';
+import { kvConfirmMonthPrefix, kvSentKey } from '../../lib/kvKeys';
 import { authenticate, jsonResponse as jsonRes } from '../_shared/edgeHelpers';
 
 interface Env {
@@ -134,6 +135,23 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       const errorBody = await sgRes.text();
       return jsonRes({ error: 'メール送信に失敗しました', details: errorBody }, {}, 500);
     }
+
+    // 送信成功後、各ドクターの sent: KV キーを記録
+    const sentAt = new Date().toISOString();
+    await Promise.all(
+      confirmedEntries.map((entry) => {
+        const record: SentRecord = {
+          empId: entry.empId,
+          year: targetYear,
+          month: targetMonth,
+          sentAt,
+        };
+        return env.KINTAI_DATA.put(
+          kvSentKey(entry.empId, targetYear, targetMonth),
+          JSON.stringify(record),
+        );
+      }),
+    );
 
     return jsonRes({
       ok: true,

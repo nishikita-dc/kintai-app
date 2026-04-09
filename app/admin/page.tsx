@@ -33,6 +33,7 @@ interface ConfirmEntry {
   confirmedAt: string;
   summary?: ConfirmSummary;
   kintai?: KintaiData;
+  sentAt?: string;
 }
 
 interface DoctorItem { id: string; name: string }
@@ -200,6 +201,16 @@ function MiniCalendar({ days }: { days: CalendarDay[] }) {
 
 // ── ドクターカード ────────────────────────────────────────────────────
 
+/** 確定日が月の前半（15日以前）かどうか */
+function isEarlyConfirm(confirmedAt: string, year: number, month: number): boolean {
+  const confirmed = new Date(confirmedAt);
+  const jstDay = new Date(confirmed.getTime() + 9 * 60 * 60 * 1000).getUTCDate();
+  const jstMonth = new Date(confirmed.getTime() + 9 * 60 * 60 * 1000).getUTCMonth() + 1;
+  const jstYear = new Date(confirmed.getTime() + 9 * 60 * 60 * 1000).getUTCFullYear();
+  // 対象月の15日以前に確定されているか
+  return jstYear === year && jstMonth === month && jstDay <= 15;
+}
+
 function DoctorCard({
   entry, isOpen, onToggle, onCsvDownload, isDownloading,
 }: {
@@ -209,7 +220,8 @@ function DoctorCard({
   onCsvDownload: () => void;
   isDownloading: boolean;
 }) {
-  const { summary, kintai } = entry;
+  const { summary, kintai, sentAt } = entry;
+  const earlyConfirm = !sentAt && isEarlyConfirm(entry.confirmedAt, entry.year, entry.month);
   const calendarDays = isOpen ? buildCalendar(entry) : [];
 
   // 特記事項: extraWorkDays + absentRecords
@@ -238,7 +250,20 @@ function DoctorCard({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-bold text-gray-800">{entry.empName}</span>
             <span className="text-xs text-gray-400">ID: {entry.empId}</span>
-            <span className="text-xs text-gray-400">確定: {formatDateTime(entry.confirmedAt)}</span>
+            {/* 送信済みバッジ (A) */}
+            {sentAt ? (
+              <span className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5 font-medium">
+                📧 送信済み {formatDateTime(sentAt)}
+              </span>
+            ) : (
+              <span className="text-xs text-gray-400">確定: {formatDateTime(entry.confirmedAt)}</span>
+            )}
+            {/* 月前半確定の警告 (C) */}
+            {earlyConfirm && (
+              <span className="flex items-center gap-1 text-xs bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2 py-0.5">
+                ⚠️ 月前半確定 — 変更の可能性あり
+              </span>
+            )}
           </div>
           {summary && (
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs">

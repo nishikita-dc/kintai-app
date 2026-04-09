@@ -1,9 +1,9 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import type { ConfirmData, KvData } from '../../types';
+import type { ConfirmData, KvData, SentRecord } from '../../types';
 import { DOCTOR_LIST } from '../../lib/constants';
 import { getCorsHeaders, jsonResponse } from '../_shared/edgeHelpers';
-import { kvConfirmMonthPrefix, kvKintaiKey } from '../../lib/kvKeys';
+import { kvConfirmMonthPrefix, kvKintaiKey, kvSentKey } from '../../lib/kvKeys';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -84,7 +84,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const prefix = kvConfirmMonthPrefix(year, month);
     const listResult = await env.KINTAI_DATA.list({ prefix });
 
-    type ConfirmEntry = Omit<ConfirmData, 'csv'> & { kintai?: KvData };
+    type ConfirmEntry = Omit<ConfirmData, 'csv'> & { kintai?: KvData; sentAt?: string };
     const confirmedEntries: ConfirmEntry[] = [];
 
     for (const key of listResult.keys) {
@@ -104,7 +104,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           try { kintai = JSON.parse(kintaiRaw) as KvData; } catch { /* skip */ }
         }
 
-        confirmedEntries.push({ ...rest, kintai });
+        // 送信済み記録を取得
+        const sentRaw = await env.KINTAI_DATA.get(
+          kvSentKey(data.empId, data.year, data.month),
+        );
+        let sentAt: string | undefined;
+        if (sentRaw) {
+          try { sentAt = (JSON.parse(sentRaw) as SentRecord).sentAt; } catch { /* skip */ }
+        }
+
+        confirmedEntries.push({ ...rest, kintai, sentAt });
       } catch {
         // 壊れたデータはスキップ
       }

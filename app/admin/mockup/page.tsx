@@ -31,6 +31,7 @@ interface DoctorConfirm {
   id: string;
   name: string;
   confirmedAt: string;
+  sentAt?: string;
   summary: { workDays: number; extraDays: number; absentPaid: number; absentUnpaid: number; absentSub: number };
   calendar: CalendarDay[];
   events: SpecialEvent[];
@@ -98,6 +99,7 @@ const MOCK_CONFIRMED_APRIL: DoctorConfirm[] = [
   {
     id: '1030', name: '生野',
     confirmedAt: '2026-04-28T00:15:00.000Z',
+    sentAt: '2026-04-30T11:00:00.000Z', // 月末自動送信済み
     summary: { workDays: 17, extraDays: 1, absentPaid: 1, absentUnpaid: 0, absentSub: 1 },
     calendar: buildAprilCalendar({
       fixedOff: COMMON_OFF,
@@ -115,7 +117,7 @@ const MOCK_CONFIRMED_APRIL: DoctorConfirm[] = [
   },
   {
     id: '1017', name: '露口',
-    confirmedAt: '2026-04-25T05:30:00.000Z',
+    confirmedAt: '2026-04-07T01:00:00.000Z', // 月前半確定（警告表示のサンプル）
     summary: { workDays: 15, extraDays: 0, absentPaid: 2, absentUnpaid: 0, absentSub: 0 },
     calendar: buildAprilCalendar({
       fixedOff: COMMON_OFF,
@@ -314,12 +316,19 @@ function MiniCalendar({ days }: { days: CalendarDay[] }) {
 
 // ── ドクターカードコンポーネント ─────────────────────────────────────
 
+function isEarlyConfirm(confirmedAt: string, year: number, month: number): boolean {
+  const t = new Date(confirmedAt).getTime() + 9 * 60 * 60 * 1000;
+  const d = new Date(t);
+  return d.getUTCFullYear() === year && d.getUTCMonth() + 1 === month && d.getUTCDate() <= 15;
+}
+
 function DoctorCard({ entry, isOpen, onToggle }: {
   entry: DoctorConfirm;
   isOpen: boolean;
   onToggle: () => void;
 }) {
-  const { summary } = entry;
+  const { summary, sentAt } = entry;
+  const earlyConfirm = !sentAt && isEarlyConfirm(entry.confirmedAt, 2026, 4);
 
   return (
     <div className={`border rounded-xl overflow-hidden transition-all ${isOpen ? 'border-indigo-300 shadow-md' : 'border-gray-200'}`}>
@@ -334,10 +343,21 @@ function DoctorCard({ entry, isOpen, onToggle }: {
         {/* 名前 */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-gray-800">{entry.name}</span>
-            <span className="text-xs text-gray-400">ID: {entry.id}</span>
-            <span className="text-xs text-gray-400">確定: {formatDateTime(entry.confirmedAt)}</span>
-          </div>
+              <span className="font-bold text-gray-800">{entry.name}</span>
+              <span className="text-xs text-gray-400">ID: {entry.id}</span>
+              {sentAt ? (
+                <span className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5 font-medium">
+                  📧 送信済み {formatDateTime(sentAt)}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400">確定: {formatDateTime(entry.confirmedAt)}</span>
+              )}
+              {earlyConfirm && (
+                <span className="flex items-center gap-1 text-xs bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2 py-0.5">
+                  ⚠️ 月前半確定 — 変更の可能性あり
+                </span>
+              )}
+            </div>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs">
             <span className="text-indigo-600">出勤 <strong>{summary.workDays}</strong>日{summary.extraDays > 0 && <span className="text-orange-500">（振替出勤 {summary.extraDays}日含む）</span>}</span>
             {summary.absentPaid > 0   && <span className="text-emerald-600">有給 <strong>{summary.absentPaid}</strong>日</span>}
