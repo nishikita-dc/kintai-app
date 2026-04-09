@@ -13,6 +13,18 @@ interface ConfirmSummary {
   absentSub: number;
 }
 
+interface AbsentRecord {
+  date: string;
+  type: '有給' | '欠勤' | '振替休日' | '祝日';
+  name?: string;
+}
+
+interface KintaiData {
+  extraWorkDays: string[];
+  absentRecords: AbsentRecord[];
+  timeChanges: { date: string; inTime: string; outTime: string }[];
+}
+
 interface ConfirmEntry {
   empId: string;
   empName: string;
@@ -20,34 +32,270 @@ interface ConfirmEntry {
   month: number;
   confirmedAt: string;
   summary?: ConfirmSummary;
+  kintai?: KintaiData;
 }
 
-interface DoctorItem {
-  id: string;
-  name: string;
+interface DoctorItem { id: string; name: string }
+interface StatusData { confirmed: ConfirmEntry[]; notConfirmed: DoctorItem[] }
+
+// ── カレンダー日付タイプ ───────────────────────────────────────────────
+
+type DayType = 'work' | 'extra' | 'paid' | 'unpaid' | 'sub_off' | 'holiday' | 'fixed_off' | 'empty';
+
+interface CalendarDay { day: number | null; type: DayType; label?: string }
+
+function buildCalendar(entry: ConfirmEntry): CalendarDay[] {
+  const { year, month, kintai } = entry;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  // 月の1日の曜日（0=日〜6=土 → Mon-first に変換）
+  const firstDow = new Date(year, month - 1, 1).getDay();
+  const startDow = (firstDow + 6) % 7; // 0=月〜6=日
+
+  // 日本の祝日（簡易: APIから取得できないため概算）
+  const holidayMap: Record<number, string> = {};
+  if (month === 1)  { holidayMap[1] = '元日'; holidayMap[13] = '成人の日'; }
+  if (month === 2)  { holidayMap[11] = '建国記念の日'; holidayMap[23] = '天皇誕生日'; }
+  if (month === 3)  { holidayMap[20] = '春分の日'; }
+  if (month === 4)  { holidayMap[29] = '昭和の日'; }
+  if (month === 5)  { holidayMap[3] = '憲法記念日'; holidayMap[4] = 'みどりの日'; holidayMap[5] = 'こどもの日'; }
+  if (month === 7)  { holidayMap[21] = '海の日'; }
+  if (month === 8)  { holidayMap[11] = '山の日'; }
+  if (month === 9)  { holidayMap[15] = '敬老の日'; holidayMap[23] = '秋分の日'; }
+  if (month === 10) { holidayMap[13] = 'スポーツの日'; }
+  if (month === 11) { holidayMap[3] = '文化の日'; holidayMap[23] = '勤労感謝の日'; }
+
+  const extraSet = new Set(
+    (kintai?.extraWorkDays ?? []).map((d) => Number(d.split('-')[2])),
+  );
+  const absentMap = new Map<number, AbsentRecord>(
+    (kintai?.absentRecords ?? []).map((r) => [Number(r.date.split('-')[2]), r]),
+  );
+
+  const days: CalendarDay[] = [];
+  for (let i = 0; i < startDow; i++) days.push({ day: null, type: 'empty' });
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = (startDow + d - 1) % 7; // 0=月〜6=日
+    const isHoliday = d in holidayMap;
+    const absent = absentMap.get(d);
+
+    let type: DayType;
+    let label: string | undefined;
+
+    if (absent?.type === '有給')       { type = 'paid'; }
+    else if (absent?.type === '欠勤')  { type = 'unpaid'; }
+    else if (absent?.type === '振替休日') { type = 'sub_off'; }
+    else if (absent?.type === '祝日')  { type = 'holiday'; label = absent.name; }
+    else if (isHoliday)                { type = 'holiday'; label = holidayMap[d]; }
+    else if (extraSet.has(d))          { type = 'extra'; }
+    else if (dow === 0 || dow === 6)   { type = 'fixed_off'; } // 土日はデフォルト定休（概算）
+    else                               { type = 'work'; }
+
+    days.push({ day: d, type, label });
+  }
+
+  while (days.length % 7 !== 0) days.push({ day: null, type: 'empty' });
+  return days;
 }
 
-interface StatusData {
-  confirmed: ConfirmEntry[];
-  notConfirmed: DoctorItem[];
+// ── スタイルヘルパー ──────────────────────────────────────────────────
+
+function dayTypeClass(type: DayType): string {
+  switch (type) {
+    case 'work':      return 'bg-indigo-100 text-indigo-700';
+    case 'extra':     return 'bg-orange-100 text-orange-700 font-bold ring-1 ring-orange-300';
+    case 'paid':      return 'bg-emerald-100 text-emerald-700';
+    case 'unpaid':    return 'bg-red-100 text-red-700';
+    case 'sub_off':   return 'bg-purple-100 text-purple-700';
+    case 'holiday':   return 'bg-amber-100 text-amber-700';
+    case 'fixed_off': return 'bg-gray-100 text-gray-400';
+    default:          return '';
+  }
 }
 
-// ── ユーティリティ ────────────────────────────────────────────────────
-
-function formatMonthLabel(monthStr: string): string {
-  const [year, month] = monthStr.split('-');
-  return `${year}年${Number(month)}月`;
+function eventIcon(type: string): string {
+  switch (type) {
+    case 'extra':     return '🔄';
+    case '有給':       return '🌿';
+    case '欠勤':       return '⚠️';
+    case '振替休日':   return '🔁';
+    case '祝日':       return '🎌';
+    default:          return '📅';
+  }
 }
 
-function formatDateTime(isoStr: string): string {
-  return new Date(isoStr).toLocaleString('ja-JP', {
+function eventBadgeClass(type: string): string {
+  switch (type) {
+    case 'extra':     return 'bg-orange-50 text-orange-700 border-orange-200';
+    case '有給':       return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    case '欠勤':       return 'bg-red-50 text-red-700 border-red-200';
+    case '振替休日':   return 'bg-purple-50 text-purple-700 border-purple-200';
+    case '祝日':       return 'bg-amber-50 text-amber-700 border-amber-200';
+    default:          return 'bg-gray-50 text-gray-600 border-gray-200';
+  }
+}
+
+function formatMonthLabel(m: string): string {
+  const [y, mo] = m.split('-');
+  return `${y}年${Number(mo)}月`;
+}
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('ja-JP', {
     timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   });
+}
+
+// ── ミニカレンダー ────────────────────────────────────────────────────
+
+function MiniCalendar({ days }: { days: CalendarDay[] }) {
+  const DOW_LABELS = ['月', '火', '水', '木', '金', '土', '日'];
+  const weeks: CalendarDay[][] = [];
+  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
+
+  return (
+    <div>
+      <div className="grid grid-cols-7 mb-1">
+        {DOW_LABELS.map((d, i) => (
+          <div key={d} className={`text-center text-xs font-semibold py-1 ${i === 6 ? 'text-red-400' : i === 5 ? 'text-blue-400' : 'text-gray-400'}`}>
+            {d}
+          </div>
+        ))}
+      </div>
+      {weeks.map((week, wi) => (
+        <div key={wi} className="grid grid-cols-7 gap-0.5 mb-0.5">
+          {week.map((cell, ci) => (
+            <div
+              key={ci}
+              className={`h-8 flex flex-col items-center justify-center rounded text-xs ${cell.type === 'empty' ? '' : dayTypeClass(cell.type)}`}
+              title={cell.label}
+            >
+              {cell.day !== null && <span>{cell.day}</span>}
+            </div>
+          ))}
+        </div>
+      ))}
+      {/* 凡例 */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 pt-3 border-t border-gray-200">
+        {([
+          ['work',      '出勤',    'bg-indigo-100'],
+          ['extra',     '振替出勤', 'bg-orange-100'],
+          ['paid',      '有給',    'bg-emerald-100'],
+          ['unpaid',    '欠勤',    'bg-red-100'],
+          ['sub_off',   '振替休日', 'bg-purple-100'],
+          ['holiday',   '祝日',    'bg-amber-100'],
+          ['fixed_off', '定休',    'bg-gray-100'],
+        ] as [DayType, string, string][]).map(([, label, bg]) => (
+          <div key={label} className="flex items-center gap-1">
+            <div className={`w-3 h-3 rounded-sm ${bg}`} />
+            <span className="text-xs text-gray-500">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── ドクターカード ────────────────────────────────────────────────────
+
+function DoctorCard({
+  entry, isOpen, onToggle, onCsvDownload, isDownloading,
+}: {
+  entry: ConfirmEntry;
+  isOpen: boolean;
+  onToggle: () => void;
+  onCsvDownload: () => void;
+  isDownloading: boolean;
+}) {
+  const { summary, kintai } = entry;
+  const calendarDays = isOpen ? buildCalendar(entry) : [];
+
+  // 特記事項: extraWorkDays + absentRecords
+  const events: { date: string; type: string; label: string }[] = [];
+  if (kintai) {
+    for (const d of kintai.extraWorkDays) {
+      const mmdd = d.slice(5).replace('-', '/');
+      events.push({ date: mmdd, type: 'extra', label: '振替出勤（休日出勤）' });
+    }
+    for (const r of kintai.absentRecords) {
+      const mmdd = r.date.slice(5).replace('-', '/');
+      events.push({ date: mmdd, type: r.type, label: r.type + (r.name ? `（${r.name}）` : '') });
+    }
+    events.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  return (
+    <div className={`border rounded-xl overflow-hidden transition-all ${isOpen ? 'border-indigo-300 shadow-md' : 'border-gray-200'}`}>
+      {/* ヘッダー行 */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
+      >
+        <span className={`text-gray-400 text-sm transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-90' : ''}`}>▶</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-gray-800">{entry.empName}</span>
+            <span className="text-xs text-gray-400">ID: {entry.empId}</span>
+            <span className="text-xs text-gray-400">確定: {formatDateTime(entry.confirmedAt)}</span>
+          </div>
+          {summary && (
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs">
+              <span className="text-indigo-600">
+                出勤 <strong>{summary.workDays}</strong>日
+                {summary.extraDays > 0 && <span className="text-orange-500">（振替出勤 {summary.extraDays}日含む）</span>}
+              </span>
+              {summary.absentPaid > 0   && <span className="text-emerald-600">有給 <strong>{summary.absentPaid}</strong>日</span>}
+              {summary.absentUnpaid > 0 && <span className="text-red-500">欠勤 <strong>{summary.absentUnpaid}</strong>日</span>}
+              {summary.absentSub > 0    && <span className="text-purple-600">振替休日 <strong>{summary.absentSub}</strong>日</span>}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onCsvDownload(); }}
+          disabled={isDownloading}
+          className="flex-shrink-0 flex items-center gap-1 text-xs bg-white text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 disabled:opacity-50 transition-colors font-medium"
+        >
+          {isDownloading ? <span className="animate-spin inline-block">⟳</span> : <span>⬇</span>}
+          CSV
+        </button>
+      </button>
+
+      {/* 展開エリア */}
+      {isOpen && (
+        <div className="border-t border-gray-100 bg-gray-50 px-4 py-4 space-y-5">
+          {/* カレンダー */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              {entry.year}年{entry.month}月 カレンダー
+            </p>
+            <MiniCalendar days={calendarDays} />
+          </div>
+
+          {/* 特記事項 */}
+          {events.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">特記事項</p>
+              <div className="space-y-1.5">
+                {events.map((ev, i) => (
+                  <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${eventBadgeClass(ev.type)}`}>
+                    <span>{eventIcon(ev.type)}</span>
+                    <span className="font-semibold">{ev.date}</span>
+                    <span>{ev.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!kintai && (
+            <p className="text-xs text-gray-400 text-center py-2">詳細データなし（旧フォーマット）</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── メインページ ──────────────────────────────────────────────────────
@@ -64,6 +312,7 @@ export default function AdminPage() {
   const [loadingMonths, setLoadingMonths] = useState<boolean>(false);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [openDoctorId, setOpenDoctorId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -81,51 +330,46 @@ export default function AdminPage() {
   }, []);
 
   // 月一覧を取得
-  const fetchMonths = useCallback(
-    async (key: string) => {
-      setLoadingMonths(true);
-      setError('');
-      try {
-        const res = await fetch('/api/admin?action=months', {
-          headers: { 'X-Admin-Key': key },
-        });
-        if (res.status === 401) {
-          setIsAuthenticated(false);
-          setAdminKey('');
-          sessionStorage.removeItem('admin_key');
-          setAuthError('パスワードが正しくありません。');
-          return;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as { months: string[] };
-        const list = data.months ?? [];
-        setMonths(list);
-        if (list.length > 0) setSelectedMonth(list[0]);
-      } catch {
-        setError('月一覧の取得に失敗しました。接続を確認してください。');
-      } finally {
-        setLoadingMonths(false);
+  const fetchMonths = useCallback(async (key: string) => {
+    setLoadingMonths(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin?action=months', {
+        headers: { 'X-Admin-Key': key },
+      });
+      if (res.status === 401) {
+        setIsAuthenticated(false);
+        setAdminKey('');
+        sessionStorage.removeItem('admin_key');
+        setAuthError('パスワードが正しくありません。');
+        return;
       }
-    },
-    [],
-  );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { months: string[] };
+      const list = data.months ?? [];
+      setMonths(list);
+      if (list.length > 0) setSelectedMonth(list[0]);
+    } catch {
+      setError('月一覧の取得に失敗しました。接続を確認してください。');
+    } finally {
+      setLoadingMonths(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (isAuthenticated && adminKey) {
-      fetchMonths(adminKey);
-    }
+    if (isAuthenticated && adminKey) fetchMonths(adminKey);
   }, [isAuthenticated, adminKey, fetchMonths]);
 
   // 選択月の提出状況を取得
   useEffect(() => {
     if (!selectedMonth || !isAuthenticated || !adminKey) return;
-
     const [year, month] = selectedMonth.split('-').map(Number);
     let cancelled = false;
 
     (async () => {
       setLoadingStatus(true);
       setError('');
+      setOpenDoctorId(null);
       try {
         const res = await fetch(
           `/api/admin?action=status&year=${year}&month=${month}`,
@@ -144,7 +388,6 @@ export default function AdminPage() {
     return () => { cancelled = true; };
   }, [selectedMonth, isAuthenticated, adminKey]);
 
-  // ログイン処理
   const handleLogin = useCallback(() => {
     const key = inputKey.trim();
     if (!key) return;
@@ -154,7 +397,6 @@ export default function AdminPage() {
     setIsAuthenticated(true);
   }, [inputKey]);
 
-  // ログアウト処理
   const handleLogout = () => {
     setAdminKey('');
     setIsAuthenticated(false);
@@ -166,7 +408,6 @@ export default function AdminPage() {
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  // CSV ダウンロード
   const handleCsvDownload = async (entry: ConfirmEntry) => {
     setDownloadingId(entry.empId);
     try {
@@ -174,19 +415,15 @@ export default function AdminPage() {
         `/api/admin-csv?empId=${entry.empId}&year=${entry.year}&month=${entry.month}`,
         { headers: { 'X-Admin-Key': adminKey } },
       );
-      if (!res.ok) {
-        alert('CSVのダウンロードに失敗しました。');
-        return;
-      }
+      if (!res.ok) { alert('CSVのダウンロードに失敗しました。'); return; }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const disposition = res.headers.get('content-disposition') ?? '';
-      const match = disposition.match(/filename\*=UTF-8''(.+)/);
+      const disp = res.headers.get('content-disposition') ?? '';
+      const match = disp.match(/filename\*=UTF-8''(.+)/);
       const mm = String(entry.month).padStart(2, '0');
-      const fallback = `${entry.year}${mm}_${entry.empId}_${entry.empName}.csv`;
       a.href = url;
-      a.download = match ? decodeURIComponent(match[1]) : fallback;
+      a.download = match ? decodeURIComponent(match[1]) : `${entry.year}${mm}_${entry.empId}_${entry.empName}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -198,20 +435,17 @@ export default function AdminPage() {
     }
   };
 
-  // 全員分まとめてダウンロード
   const handleDownloadAll = async () => {
     if (!statusData || statusData.confirmed.length === 0) return;
     for (const entry of statusData.confirmed) {
       await handleCsvDownload(entry);
-      // ブラウザのダウンロードダイアログが連続しないよう少し待機
       await new Promise((r) => setTimeout(r, 300));
     }
   };
 
   const totalDoctors = DOCTOR_LIST.length;
   const confirmedCount = statusData?.confirmed.length ?? 0;
-  const progressPercent =
-    totalDoctors > 0 ? Math.round((confirmedCount / totalDoctors) * 100) : 0;
+  const progressPercent = totalDoctors > 0 ? Math.round((confirmedCount / totalDoctors) * 100) : 0;
 
   // ── ログイン画面 ────────────────────────────────────────────────────
 
@@ -222,23 +456,16 @@ export default function AdminPage() {
           <div className="text-center mb-8">
             <img src="/logo.png" alt="スター歯科クリニック" className="w-16 h-16 rounded-2xl shadow-lg mx-auto mb-4" />
             <h1 className="text-xl font-bold text-gray-800">勤怠管理ダッシュボード</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              医療法人社団スター歯科クリニック
-            </p>
+            <p className="text-sm text-gray-400 mt-1">医療法人社団スター歯科クリニック</p>
           </div>
-
           {authError && (
             <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl p-3 mb-4 flex items-center gap-2">
-              <span>⚠️</span>
-              <span>{authError}</span>
+              <span>⚠️</span><span>{authError}</span>
             </div>
           )}
-
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                管理パスワード
-              </label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">管理パスワード</label>
               <input
                 ref={inputRef}
                 type="password"
@@ -257,58 +484,50 @@ export default function AdminPage() {
               ログイン
             </button>
           </div>
-
-          <p className="text-center text-xs text-gray-300 mt-6">
-            事務専用管理画面
-          </p>
+          <p className="text-center text-xs text-gray-300 mt-6">事務専用管理画面</p>
         </div>
       </div>
     );
   }
 
-  // ── ダッシュボード画面 ───────────────────────────────────────────────
+  // ── ダッシュボード ───────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src="/logo.png" alt="スター歯科クリニック" className="w-9 h-9 flex-shrink-0" />
             <div>
-              <h1 className="text-sm font-bold text-gray-800 leading-tight">
-                勤怠管理ダッシュボード
-              </h1>
+              <h1 className="text-sm font-bold text-gray-800 leading-tight">勤怠管理ダッシュボード</h1>
               <p className="text-xs text-gray-400">医療法人社団スター歯科クリニック</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-xs text-gray-400 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:border-gray-300 transition-colors"
-          >
-            ログアウト
-          </button>
+          <div className="flex items-center gap-2">
+            <a href="/admin/mockup/" className="text-xs text-gray-400 hover:text-indigo-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:border-indigo-300 transition-colors">
+              モック
+            </a>
+            <button
+              onClick={handleLogout}
+              className="text-xs text-gray-400 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:border-gray-300 transition-colors"
+            >
+              ログアウト
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-5">
 
-        {/* ── 月選択 ─────────────────────────────────────────────────── */}
+        {/* 月選択 */}
         <section className="bg-white rounded-2xl border border-gray-200 p-5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            対象月を選択
-          </p>
-
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">対象月を選択</p>
           {loadingMonths ? (
             <div className="flex gap-2">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-8 w-20 bg-gray-100 rounded-full animate-pulse" />
-              ))}
+              {[...Array(4)].map((_, i) => <div key={i} className="h-8 w-20 bg-gray-100 rounded-full animate-pulse" />)}
             </div>
           ) : months.length === 0 ? (
-            <p className="text-sm text-gray-400">
-              まだ確定データがありません。
-            </p>
+            <p className="text-sm text-gray-400">まだ確定データがありません。</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {months.map((m, idx) => (
@@ -323,13 +542,7 @@ export default function AdminPage() {
                 >
                   {formatMonthLabel(m)}
                   {idx === 0 && (
-                    <span
-                      className={`text-xs rounded-full px-1.5 py-0.5 font-normal ${
-                        selectedMonth === m
-                          ? 'bg-white/20 text-white'
-                          : 'bg-indigo-100 text-indigo-600'
-                      }`}
-                    >
+                    <span className={`text-xs rounded-full px-1.5 py-0.5 font-normal ${selectedMonth === m ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
                       最新
                     </span>
                   )}
@@ -339,44 +552,35 @@ export default function AdminPage() {
           )}
         </section>
 
-        {/* ── 提出状況 ─────────────────────────────────────────────────── */}
+        {/* 提出状況 */}
         {selectedMonth && (
           <section className="bg-white rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-bold text-gray-800">
-                  {formatMonthLabel(selectedMonth)} 提出状況
-                </h2>
+                <h2 className="text-base font-bold text-gray-800">{formatMonthLabel(selectedMonth)} 提出状況</h2>
                 {!loadingStatus && statusData && (
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {statusData.confirmed.length}名 / {totalDoctors}名 確定済み
-                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">{statusData.confirmed.length}名 / {totalDoctors}名 確定済み</p>
                 )}
               </div>
-
               {!loadingStatus && statusData && statusData.confirmed.length > 0 && (
                 <button
                   onClick={handleDownloadAll}
                   disabled={downloadingId !== null}
                   className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-100 disabled:opacity-50 transition-colors font-medium"
                 >
-                  <span>⬇</span>
-                  全員CSV一括
+                  ⬇ 全員CSV一括
                 </button>
               )}
             </div>
 
             {loadingStatus ? (
               <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
-                ))}
+                {[...Array(5)].map((_, i) => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}
               </div>
             ) : error ? (
               <div className="text-center py-6 text-red-500 text-sm">{error}</div>
             ) : statusData ? (
               <div className="space-y-5">
-
                 {/* プログレスバー */}
                 <div>
                   <div className="flex justify-between text-xs text-gray-500 mb-1.5">
@@ -391,96 +595,42 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 確定済みリスト */}
+                {/* 確定済み */}
                 {statusData.confirmed.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2.5">
-                      <span className="text-sm font-semibold text-emerald-700">
-                        ✅ 確定済み
-                      </span>
+                      <span className="text-sm font-semibold text-emerald-700">✅ 確定済み</span>
                       <span className="bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full px-2 py-0.5">
                         {statusData.confirmed.length}名
                       </span>
                     </div>
                     <div className="space-y-2">
                       {statusData.confirmed.map((entry) => (
-                        <div
+                        <DoctorCard
                           key={entry.empId}
-                          className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold text-gray-800 text-sm">
-                                {entry.empName}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                ID: {entry.empId}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap gap-x-3">
-                              <span>確定: {formatDateTime(entry.confirmedAt)}</span>
-                              {entry.summary && (
-                                <span className="text-gray-600">
-                                  出勤 <strong>{entry.summary.workDays}</strong>日
-                                  {entry.summary.extraDays > 0 && (
-                                    <span className="text-orange-600">
-                                      （休日出勤 {entry.summary.extraDays}日）
-                                    </span>
-                                  )}
-                                  {entry.summary.absentPaid > 0 && (
-                                    <span className="ml-1">
-                                      有給 {entry.summary.absentPaid}日
-                                    </span>
-                                  )}
-                                  {entry.summary.absentUnpaid > 0 && (
-                                    <span className="ml-1 text-red-500">
-                                      欠勤 {entry.summary.absentUnpaid}日
-                                    </span>
-                                  )}
-                                  {entry.summary.absentSub > 0 && (
-                                    <span className="ml-1">
-                                      振替 {entry.summary.absentSub}日
-                                    </span>
-                                  )}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleCsvDownload(entry)}
-                            disabled={downloadingId !== null}
-                            className="flex-shrink-0 flex items-center gap-1 text-xs bg-white text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 disabled:opacity-50 transition-colors font-medium whitespace-nowrap"
-                          >
-                            {downloadingId === entry.empId ? (
-                              <span className="animate-spin">⟳</span>
-                            ) : (
-                              <span>⬇</span>
-                            )}
-                            CSV
-                          </button>
-                        </div>
+                          entry={entry}
+                          isOpen={openDoctorId === entry.empId}
+                          onToggle={() => setOpenDoctorId(openDoctorId === entry.empId ? null : entry.empId)}
+                          onCsvDownload={() => handleCsvDownload(entry)}
+                          isDownloading={downloadingId === entry.empId}
+                        />
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* 未提出リスト */}
+                {/* 未提出 */}
                 {statusData.notConfirmed.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2.5">
-                      <span className="text-sm font-semibold text-gray-500">
-                        ⏳ 未提出
-                      </span>
+                      <span className="text-sm font-semibold text-gray-500">⏳ 未提出</span>
                       <span className="bg-gray-100 text-gray-500 text-xs font-bold rounded-full px-2 py-0.5">
                         {statusData.notConfirmed.length}名
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {statusData.notConfirmed.map((doctor) => (
-                        <div
-                          key={doctor.id}
-                          className="bg-gray-100 text-gray-600 rounded-lg px-3 py-1.5 text-sm font-medium"
-                        >
+                        <div key={doctor.id} className="bg-gray-100 text-gray-600 rounded-lg px-3 py-1.5 text-sm font-medium">
                           {doctor.name}
                         </div>
                       ))}
@@ -488,12 +638,9 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {statusData.confirmed.length === 0 &&
-                  statusData.notConfirmed.length === 0 && (
-                    <p className="text-center text-gray-400 py-6 text-sm">
-                      データがありません
-                    </p>
-                  )}
+                {statusData.confirmed.length === 0 && statusData.notConfirmed.length === 0 && (
+                  <p className="text-center text-gray-400 py-6 text-sm">データがありません</p>
+                )}
               </div>
             ) : null}
           </section>

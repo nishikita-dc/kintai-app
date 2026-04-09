@@ -1,9 +1,9 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import type { ConfirmData } from '../../types';
+import type { ConfirmData, KvData } from '../../types';
 import { DOCTOR_LIST } from '../../lib/constants';
 import { getCorsHeaders, jsonResponse } from '../_shared/edgeHelpers';
-import { kvConfirmMonthPrefix } from '../../lib/kvKeys';
+import { kvConfirmMonthPrefix, kvKintaiKey } from '../../lib/kvKeys';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -84,7 +84,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const prefix = kvConfirmMonthPrefix(year, month);
     const listResult = await env.KINTAI_DATA.list({ prefix });
 
-    const confirmedEntries: Omit<ConfirmData, 'csv'>[] = [];
+    type ConfirmEntry = Omit<ConfirmData, 'csv'> & { kintai?: KvData };
+    const confirmedEntries: ConfirmEntry[] = [];
 
     for (const key of listResult.keys) {
       const raw = await env.KINTAI_DATA.get(key.name);
@@ -93,7 +94,17 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         const data = JSON.parse(raw) as ConfirmData;
         // CSV は含めず必要なフィールドのみ返す（レスポンスを軽量化）
         const { csv: _csv, ...rest } = data;
-        confirmedEntries.push(rest);
+
+        // kintai 例外データ（欠勤種別・振替出勤日など）を追加取得
+        const kintaiRaw = await env.KINTAI_DATA.get(
+          kvKintaiKey(data.empId, data.year, data.month),
+        );
+        let kintai: KvData | undefined;
+        if (kintaiRaw) {
+          try { kintai = JSON.parse(kintaiRaw) as KvData; } catch { /* skip */ }
+        }
+
+        confirmedEntries.push({ ...rest, kintai });
       } catch {
         // 壊れたデータはスキップ
       }
