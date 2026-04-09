@@ -7,11 +7,11 @@ import { apiHeaders } from '@/lib/api';
 import { useAppStorage } from '@/app/hooks/useAppStorage';
 import { useSchedule } from '@/app/hooks/useSchedule';
 import { useKvSync, useConfigSync } from '@/app/hooks/useKvSync';
-import BasicInfoStep from '@/app/components/BasicInfoStep';
 import CalendarView from '@/app/components/CalendarView';
 import ExceptionEditor from '@/app/components/ExceptionEditor';
 import PreviewTable from '@/app/components/PreviewTable';
 import DoctorSelectScreen from '@/app/components/DoctorSelectScreen';
+import SettingsModal from '@/app/components/SettingsModal';
 
 const WEEK_DAYS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 
@@ -94,6 +94,9 @@ export default function Home() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [confirmedAt, setConfirmedAt] = useState<string | null>(null);
+
+  // ── 設定モーダル ──────────────────────────────────────────────────
+  const [showSettings, setShowSettings] = useState(false);
 
   // 月・定休日が変わったらプレビューをリセット
   useEffect(() => {
@@ -381,11 +384,11 @@ export default function Home() {
               <p className="text-xs text-slate-400 font-mono">ID: {empId}</p>
             </div>
             <button
-              onClick={handleDoctorChange}
+              onClick={() => setShowSettings(true)}
               className="text-xs bg-slate-100 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 font-bold"
             >
-              <i className="fa-solid fa-arrows-rotate" />
-              ドクター変更
+              <i className="fa-solid fa-gear" />
+              設定
             </button>
           </div>
         </div>
@@ -409,21 +412,29 @@ export default function Home() {
           </div>
         )}
 
-        <BasicInfoStep
-          year={year}
-          month={month}
-          weekdayHoliday={weekdayHoliday}
-          onYearChange={setYear}
-          onMonthChange={setMonth}
-          onWeekdayHolidayChange={setWeekdayHoliday}
-        />
+        {/* 対象月バナー */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-brand-500 text-white w-10 h-10 rounded-lg flex items-center justify-center">
+              <i className="fa-solid fa-calendar-days text-lg" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 font-bold">対象月</p>
+              <p className="text-xl font-bold text-slate-800">
+                {year}年<span className="text-brand-600">{month}月</span>分
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-400">
+              定休日: 日曜 + {['日','月','火','水','木','金','土'][weekdayHoliday]}曜
+            </p>
+          </div>
+        </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition hover:shadow-md">
           <h2 className="text-lg font-bold mb-4 pb-2 text-slate-700 flex items-center border-b border-slate-200">
-            <span className="bg-emerald-500 text-white text-xs font-bold mr-3 px-2 py-1 rounded-md">
-              STEP 2
-            </span>
-            <i className="fa-solid fa-calendar-check mr-2 text-slate-500" />
+            <i className="fa-solid fa-calendar-check mr-2 text-brand-500" />
             例外スケジュールの修正
           </h2>
           <p className="text-xs text-slate-500 mb-4 bg-slate-50 p-2 rounded">
@@ -506,6 +517,17 @@ export default function Home() {
       <footer className="text-center p-6 text-slate-400 text-xs">
         &copy; 2026 Star Dental Clinic System.
       </footer>
+
+      {/* 設定モーダル */}
+      {showSettings && (
+        <SettingsModal
+          weekdayHoliday={weekdayHoliday}
+          onWeekdayHolidayChange={setWeekdayHoliday}
+          empName={empName}
+          onDoctorChange={handleDoctorChange}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
 
       {/* 確定確認ダイアログ */}
       {showConfirmDialog && (

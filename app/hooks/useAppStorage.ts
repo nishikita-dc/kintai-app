@@ -20,8 +20,11 @@ interface UseAppStorageReturn {
 export function useAppStorage(): UseAppStorageReturn {
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorItem | null>(null);
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(3);
+
+  // 年月は現在日付から自動設定
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
   const [weekdayHoliday, setWeekdayHoliday] = useState(4);
 
   // localStorage から初期値を復元
@@ -39,54 +42,45 @@ export function useAppStorage(): UseAppStorageReturn {
       }
     }
 
-    // 年月は共通設定から復元（v5_0 になければ v4_0 にフォールバック）
-    const savedConfig =
-      localStorage.getItem(STORAGE_KEYS.CONFIG) ??
-      localStorage.getItem('star_dental_config_v4_0');
-    if (savedConfig) {
-      try {
-        const parsed = JSON.parse(savedConfig);
-        if (parsed.year && parsed.month) {
-          setYear(parsed.year);
-          setMonth(parsed.month);
-        }
-      } catch (e) {
-        console.error('設定読み込みエラー', e);
-      }
-    }
+    // 年月は常に現在日付を使用（自動切替）
 
     // 定休日はドクター個別設定を優先し、なければ共通設定にフォールバック
     const doctorConfigRaw = docId ? localStorage.getItem(weekdayKey(docId)) : null;
     if (doctorConfigRaw !== null) {
       const wd = Number(doctorConfigRaw);
       if (!isNaN(wd)) setWeekdayHoliday(wd);
-    } else if (savedConfig) {
-      try {
-        const parsed = JSON.parse(savedConfig);
-        if (parsed.weekdayHoliday !== undefined) {
-          setWeekdayHoliday(parsed.weekdayHoliday);
-        } else if (parsed.holidays) {
-          const wd = (parsed.holidays as number[]).find((d) => d !== 0);
-          setWeekdayHoliday(wd !== undefined ? wd : 4);
+    } else {
+      const savedConfig =
+        localStorage.getItem(STORAGE_KEYS.CONFIG) ??
+        localStorage.getItem('star_dental_config_v4_0');
+      if (savedConfig) {
+        try {
+          const parsed = JSON.parse(savedConfig);
+          if (parsed.weekdayHoliday !== undefined) {
+            setWeekdayHoliday(parsed.weekdayHoliday);
+          } else if (parsed.holidays) {
+            const wd = (parsed.holidays as number[]).find((d: number) => d !== 0);
+            setWeekdayHoliday(wd !== undefined ? wd : 4);
+          }
+        } catch (e) {
+          console.error('定休日設定読み込みエラー', e);
         }
-      } catch (e) {
-        console.error('定休日設定読み込みエラー', e);
       }
     }
 
     setIsInitialized(true);
   }, []);
 
-  // 年月・定休日を localStorage に保存
+  // 定休日を localStorage に保存
   useEffect(() => {
     if (!isInitialized) return;
     const empId = selectedDoctor?.id;
-    const config = { weekdayHoliday, holidays: [0, weekdayHoliday], year, month };
+    const config = { weekdayHoliday, holidays: [0, weekdayHoliday] };
     localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config));
     if (empId) {
       localStorage.setItem(weekdayKey(empId), String(weekdayHoliday));
     }
-  }, [weekdayHoliday, year, month, isInitialized, selectedDoctor]);
+  }, [weekdayHoliday, isInitialized, selectedDoctor]);
 
   const selectDoctor = (doctor: DoctorItem) => {
     setSelectedDoctor(doctor);
