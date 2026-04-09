@@ -211,9 +211,11 @@ export default function PreviewTable({
           {/* ── 主アクション：確定して送信予約 ── */}
           {isConfirmed ? (
             /* 確定済みバナー */
-            <div className="bg-green-500 rounded-xl px-5 py-4 flex items-start gap-3">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl px-5 py-4 flex items-start gap-3 confirm-success-bg">
               <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <i className="fa-solid fa-circle-check text-white text-lg" />
+                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 12 10 16 18 8" strokeDasharray="24" className="check-animation" />
+                </svg>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-white text-sm">

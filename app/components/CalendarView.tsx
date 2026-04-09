@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useCallback } from 'react';
 import type { AbsentRecord } from '@/types';
 import { JAPANESE_HOLIDAYS, WEEK_DAYS_JA } from '@/lib/constants';
 
@@ -13,6 +13,8 @@ interface CalendarViewProps {
   absentRecords: AbsentRecord[];
   onToggleDate: (dateStr: string) => void;
   disabled?: boolean;
+  onSwipePrev?: () => void;
+  onSwipeNext?: () => void;
 }
 
 const WEEK_LABELS = WEEK_DAYS_JA;
@@ -26,7 +28,27 @@ function CalendarView({
   absentRecords,
   onToggleDate,
   disabled = false,
+  onSwipePrev,
+  onSwipeNext,
 }: CalendarViewProps) {
+  // スワイプ検出
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStart.current) return;
+    const dx = e.changedTouches[0].clientX - touchStart.current.x;
+    const dy = e.changedTouches[0].clientY - touchStart.current.y;
+    // 水平方向のスワイプのみ検出（垂直スクロールと区別）
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx > 0) onSwipePrev?.();
+      else onSwipeNext?.();
+    }
+    touchStart.current = null;
+  }, [onSwipePrev, onSwipeNext]);
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDay = new Date(year, month - 1, 1).getDay();
 
@@ -132,14 +154,15 @@ function CalendarView({
             </span>
           )}
         </div>
-        {/* ステータスドット */}
+        {/* ステータスバー */}
         {statusLabel && (
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2">
-            <div className={`w-1.5 h-1.5 rounded-full ${
+          <div className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl">
+            <div className={`h-full rounded-b-xl ${
               statusLabel.includes('出勤') ? 'bg-orange-400'
               : statusLabel === '有給' ? 'bg-emerald-400'
               : statusLabel === '欠勤' ? 'bg-red-400'
               : statusLabel === '祝日' ? 'bg-pink-400'
+              : statusLabel === '定休日' ? 'bg-slate-300 dark:bg-slate-600'
               : 'bg-blue-400'
             }`} />
           </div>
@@ -149,7 +172,7 @@ function CalendarView({
   }
 
   return (
-    <div className="mb-6">
+    <div className="mb-6" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="grid grid-cols-7 mb-2">
         {WEEK_LABELS.map((w, i) => (
           <div

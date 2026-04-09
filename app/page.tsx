@@ -399,7 +399,7 @@ export default function Home() {
   // ── メイン UI ──────────────────────────────────────────────────────
   return (
     <div className="min-h-screen pb-20 bg-slate-50 dark:bg-slate-900">
-      <header className="bg-gradient-to-r from-brand-500 via-brand-400 to-amber-400 shadow-lg sticky top-0 z-10">
+      <header className="bg-gradient-to-r from-brand-500 via-brand-400 to-amber-400 shadow-lg sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 py-3.5 flex justify-between items-center">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
@@ -496,7 +496,7 @@ export default function Home() {
         })()}
 
         {/* 対象月バナー */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+        <div className="glass rounded-xl shadow-sm border border-white/50 dark:border-slate-700 p-5">
           <div className="flex items-center justify-center gap-4 mb-2">
             <button
               onClick={() => {
@@ -527,7 +527,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition hover:shadow-md">
+        <div id="section-calendar" className="glass rounded-xl shadow-sm border border-white/50 dark:border-slate-700 p-6 transition hover:shadow-md scroll-mt-20">
           <h2 className="text-lg font-bold mb-4 pb-2 text-slate-800 dark:text-slate-100 flex items-center border-b border-slate-200 dark:border-slate-700">
             <i className="fa-solid fa-calendar-check mr-2 text-brand-500" />
             例外スケジュールの修正
@@ -540,9 +540,22 @@ export default function Home() {
           {/* KV 読み込み中オーバーレイ */}
           <div className="relative">
             {isKvLoading && (
-              <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 z-10 flex flex-col items-center justify-center rounded-lg gap-2">
-                <i className="fa-solid fa-spinner fa-spin text-brand-500 text-2xl" />
-                <p className="text-sm text-slate-500 font-medium">データを読み込み中...</p>
+              <div className="absolute inset-0 z-10 rounded-lg p-2 space-y-4">
+                {/* カレンダースケルトン */}
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <div key={`wh-${i}`} className="skeleton h-6" />
+                  ))}
+                  {Array.from({ length: 35 }).map((_, i) => (
+                    <div key={`sh-${i}`} className="skeleton h-20 rounded-xl" />
+                  ))}
+                </div>
+                {/* リストスケルトン */}
+                <div className="space-y-2">
+                  <div className="skeleton h-8 w-40" />
+                  <div className="skeleton h-12" />
+                  <div className="skeleton h-12" />
+                </div>
               </div>
             )}
 
@@ -564,6 +577,8 @@ export default function Home() {
               absentRecords={absentRecords}
               onToggleDate={toggleDateStatus}
               disabled={isConfirmed || isConfirming}
+              onSwipePrev={() => { if (month === 1) { setYear(year - 1); setMonth(12); } else setMonth(month - 1); }}
+              onSwipeNext={() => { if (month === 12) { setYear(year + 1); setMonth(1); } else setMonth(month + 1); }}
             />
 
             <ExceptionEditor
@@ -593,6 +608,9 @@ export default function Home() {
         </div>
 
         {showPreview && (
+          <div id="section-preview" className="scroll-mt-20" />
+        )}
+        {showPreview && (
           <PreviewTable
             previewData={previewData}
             summary={summary}
@@ -614,9 +632,39 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="text-center p-6 text-slate-400 dark:text-slate-500 text-xs">
+      <footer className="text-center p-6 pb-24 text-slate-400 dark:text-slate-500 text-xs">
         &copy; {new Date().getFullYear()} Star Dental Clinic System.
       </footer>
+
+      {/* ボトムナビゲーション */}
+      <nav className="fixed bottom-0 left-0 right-0 z-20 glass border-t border-white/30 dark:border-slate-700 shadow-lg sm:hidden">
+        <div className="max-w-3xl mx-auto flex justify-around py-2">
+          <button
+            onClick={() => document.getElementById('section-calendar')?.scrollIntoView({ behavior: 'smooth' })}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 text-brand-600 dark:text-brand-400"
+          >
+            <i className="fa-solid fa-calendar text-lg" />
+            <span className="text-[10px] font-bold">カレンダー</span>
+          </button>
+          <button
+            onClick={() => {
+              if (!showPreview) generateData();
+              setTimeout(() => document.getElementById('section-preview')?.scrollIntoView({ behavior: 'smooth' }), 100);
+            }}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 text-slate-500 dark:text-slate-400"
+          >
+            <i className="fa-solid fa-table-list text-lg" />
+            <span className="text-[10px] font-bold">プレビュー</span>
+          </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 text-slate-500 dark:text-slate-400"
+          >
+            <i className="fa-solid fa-gear text-lg" />
+            <span className="text-[10px] font-bold">設定</span>
+          </button>
+        </div>
+      </nav>
 
       {/* 設定モーダル */}
       {showSettings && (
