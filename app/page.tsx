@@ -496,22 +496,22 @@ export default function Home() {
         })()}
 
         {/* 対象月バナー */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => {
                 if (month === 1) { setYear(year - 1); setMonth(12); }
                 else setMonth(month - 1);
               }}
-              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition text-slate-500 dark:text-slate-300"
+              className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition text-slate-600 dark:text-slate-300"
               aria-label="前月"
             >
-              <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
+              <i className="fa-solid fa-chevron-left text-sm" aria-hidden="true" />
             </button>
             <div className="text-center">
-              <p className="text-xs text-slate-500 font-bold">対象月</p>
-              <p className="text-xl font-bold text-slate-800">
-                {year}年<span className="text-brand-600">{month}月</span>分
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mb-0.5">対象月</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">
+                {year}年<span className="text-brand-500">{month}月</span>分
               </p>
             </div>
             <button
@@ -519,25 +519,25 @@ export default function Home() {
                 if (month === 12) { setYear(year + 1); setMonth(1); }
                 else setMonth(month + 1);
               }}
-              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition text-slate-500 dark:text-slate-300"
+              className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition text-slate-600 dark:text-slate-300"
               aria-label="翌月"
             >
-              <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true" />
+              <i className="fa-solid fa-chevron-right text-sm" aria-hidden="true" />
             </button>
           </div>
           <div className="text-right">
-            <p className="text-xs text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium">
               定休日: 日曜 + {WEEK_DAYS_JA[weekdayHoliday]}曜
             </p>
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition hover:shadow-md">
-          <h2 className="text-lg font-bold mb-4 pb-2 text-slate-700 flex items-center border-b border-slate-200">
+          <h2 className="text-lg font-bold mb-4 pb-2 text-slate-800 dark:text-slate-100 flex items-center border-b border-slate-200 dark:border-slate-700">
             <i className="fa-solid fa-calendar-check mr-2 text-brand-500" />
             例外スケジュールの修正
           </h2>
-          <p className="text-xs text-slate-500 mb-4 bg-slate-50 p-2 rounded">
+          <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 bg-slate-50 dark:bg-slate-700/50 p-2 rounded">
             <i className="fa-solid fa-wand-magic-sparkles mr-1 text-brand-500" />
             カレンダーをクリックすると「出勤/休み」を切り替えられます。自動入力された祝日や振替出勤もここで変更できます。
           </p>

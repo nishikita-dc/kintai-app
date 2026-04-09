@@ -123,7 +123,7 @@ export default function ExceptionEditor({
 
           <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600 mb-3">
             <div className="mb-2">
-              <span className="text-xs text-slate-500 block mb-1">日付</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400 block mb-1">日付</span>
               <input
                 type="date"
                 value={tempAbsentDate}
@@ -132,7 +132,7 @@ export default function ExceptionEditor({
               />
             </div>
             <div className="mb-3">
-              <span className="text-xs text-slate-500 block mb-1">休みの種類</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400 block mb-1">休みの種類</span>
               <div className="flex gap-2">
                 {USER_ABSENT_TYPES.map((type) => (
                   <label
@@ -184,7 +184,7 @@ export default function ExceptionEditor({
                 className="flex justify-between items-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-xs px-2 py-1.5 rounded shadow-sm"
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-600">
+                  <span className="font-bold text-slate-700 dark:text-slate-200">
                     {r.date.slice(5)}{' '}
                     <span className="text-slate-400">({getWeekDay(r.date)})</span>
                   </span>
@@ -286,7 +286,7 @@ export default function ExceptionEditor({
 
         <div className="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600 mb-3">
           <div className="mb-2">
-            <span className="text-xs text-slate-500 block mb-1">日付</span>
+            <span className="text-xs text-slate-600 dark:text-slate-400 block mb-1">日付</span>
             <input
               type="date"
               value={tempChangeDate}
@@ -296,7 +296,7 @@ export default function ExceptionEditor({
           </div>
           <div className="flex items-end gap-2">
             <div className="flex-1">
-              <span className="text-xs text-slate-500 block mb-1">開始</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400 block mb-1">開始</span>
               <input
                 type="time"
                 value={tempInTime}
@@ -310,7 +310,7 @@ export default function ExceptionEditor({
             </div>
             <span className="text-slate-400 pb-2">~</span>
             <div className="flex-1">
-              <span className="text-xs text-slate-500 block mb-1">終了</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400 block mb-1">終了</span>
               <input
                 type="time"
                 value={tempOutTime}

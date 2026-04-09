@@ -155,7 +155,7 @@ function CalendarView({
           <div
             key={i}
             className={`text-center py-2 text-xs font-bold ${
-              i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-400'
+              i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-slate-600 dark:text-slate-400'
             }`}
           >
             {w}
