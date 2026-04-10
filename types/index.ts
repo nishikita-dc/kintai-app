@@ -38,6 +38,7 @@ export interface KvData {
   extraWorkDays: string[];
   absentRecords: AbsentRecord[];
   timeChanges: TimeChange[];
+  extraHolidays?: string[];
 }
 
 export interface PostBody {

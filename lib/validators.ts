@@ -47,9 +47,18 @@ export function validateKvData(data: unknown): KvData | null {
   if (!Array.isArray(d.timeChanges)) return null;
   if (!d.timeChanges.every(isTimeChange)) return null;
 
+  // extraHolidays は省略可能（後方互換）
+  let extraHolidays: string[] | undefined;
+  if (d.extraHolidays !== undefined) {
+    if (!Array.isArray(d.extraHolidays)) return null;
+    if (!d.extraHolidays.every((v: unknown) => typeof v === 'string' && DATE_RE.test(v))) return null;
+    extraHolidays = d.extraHolidays as string[];
+  }
+
   return {
     extraWorkDays: d.extraWorkDays as string[],
     absentRecords: d.absentRecords as AbsentRecord[],
     timeChanges: d.timeChanges as TimeChange[],
+    ...(extraHolidays !== undefined ? { extraHolidays } : {}),
   };
 }

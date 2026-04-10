@@ -78,9 +78,11 @@ export default function Home() {
     extraWorkDays,
     absentRecords,
     timeChanges,
+    extraHolidays,
     setExtraWorkDays,
     setAbsentRecords,
     setTimeChanges,
+    setExtraHolidays,
   });
 
   // ── プレビュー・CSV 状態 ──────────────────────────────────────────

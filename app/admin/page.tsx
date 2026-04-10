@@ -23,6 +23,7 @@ interface KintaiData {
   extraWorkDays: string[];
   absentRecords: AbsentRecord[];
   timeChanges: { date: string; inTime: string; outTime: string }[];
+  extraHolidays?: string[];
 }
 
 interface ConfirmEntry {
@@ -41,7 +42,7 @@ interface StatusData { confirmed: ConfirmEntry[]; notConfirmed: DoctorItem[] }
 
 // ── カレンダー日付タイプ ───────────────────────────────────────────────
 
-type DayType = 'work' | 'extra' | 'paid' | 'unpaid' | 'sub_off' | 'holiday' | 'fixed_off' | 'empty';
+type DayType = 'work' | 'extra' | 'paid' | 'unpaid' | 'sub_off' | 'holiday' | 'fixed_off' | 'extra_off' | 'empty';
 
 interface CalendarDay { day: number | null; type: DayType; label?: string }
 
@@ -74,6 +75,9 @@ function buildCalendar(entry: ConfirmEntry): CalendarDay[] {
   const extraSet = new Set(
     (kintai?.extraWorkDays ?? []).map((d) => Number(d.split('-')[2])),
   );
+  const extraHolidaySet = new Set(
+    (kintai?.extraHolidays ?? []).map((d) => Number(d.split('-')[2])),
+  );
   // 同日に複数レコードがある場合は最初のものを優先（first-wins）
   const absentMap = new Map<number, AbsentRecord>();
   for (const r of (kintai?.absentRecords ?? [])) {
@@ -98,7 +102,8 @@ function buildCalendar(entry: ConfirmEntry): CalendarDay[] {
     else if (absent?.type === '祝日')  { type = 'holiday'; label = absent.name; }
     else if (isHoliday)                { type = 'holiday'; label = holidayMap[d]; }
     else if (extraSet.has(d))          { type = 'extra'; }
-    else if (dow === 0 || dow === 6)   { type = 'fixed_off'; } // 土日はデフォルト定休（概算）
+    else if (extraHolidaySet.has(d))   { type = 'extra_off'; label = '臨時休診'; }
+    else if (dow === 0 || dow === 6)   { type = 'fixed_off'; }
     else                               { type = 'work'; }
 
     days.push({ day: d, type, label });
@@ -119,6 +124,7 @@ function dayTypeClass(type: DayType): string {
     case 'sub_off':   return 'bg-purple-100 text-purple-700';
     case 'holiday':   return 'bg-amber-100 text-amber-700';
     case 'fixed_off': return 'bg-gray-100 text-gray-400';
+    case 'extra_off': return 'bg-violet-100 text-violet-700';
     default:          return '';
   }
 }
@@ -196,6 +202,7 @@ const MiniCalendar = memo(function MiniCalendar({ days }: { days: CalendarDay[] 
           ['unpaid',    '欠勤',    'bg-red-100'],
           ['sub_off',   '振替休日', 'bg-purple-100'],
           ['holiday',   '祝日',    'bg-amber-100'],
+          ['extra_off', '臨時休診', 'bg-violet-100'],
           ['fixed_off', '定休',    'bg-gray-100'],
         ] as [DayType, string, string][]).map(([, label, bg]) => (
           <div key={label} className="flex items-center gap-1">

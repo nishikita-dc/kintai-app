@@ -13,9 +13,11 @@ interface UseKvSyncParams {
   extraWorkDays: string[];
   absentRecords: AbsentRecord[];
   timeChanges: TimeChange[];
+  extraHolidays: string[];
   setExtraWorkDays: React.Dispatch<React.SetStateAction<string[]>>;
   setAbsentRecords: React.Dispatch<React.SetStateAction<AbsentRecord[]>>;
   setTimeChanges: React.Dispatch<React.SetStateAction<TimeChange[]>>;
+  setExtraHolidays: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 interface UseKvSyncReturn {
@@ -34,9 +36,11 @@ export function useKvSync({
   extraWorkDays,
   absentRecords,
   timeChanges,
+  extraHolidays,
   setExtraWorkDays,
   setAbsentRecords,
   setTimeChanges,
+  setExtraHolidays,
 }: UseKvSyncParams): UseKvSyncReturn {
   const [isKvLoading, setIsKvLoading] = useState(false);
   const [kvError, setKvError] = useState<string | null>(null);
@@ -68,6 +72,7 @@ export function useKvSync({
           setExtraWorkDays(data.extraWorkDays);
           setAbsentRecords(data.absentRecords);
           setTimeChanges(data.timeChanges);
+          setExtraHolidays(data.extraHolidays ?? []);
         } else if (data !== null) {
           console.warn('KVデータのスキーマが不正です。自動生成値を使用します。', data);
         }
@@ -117,7 +122,7 @@ export function useKvSync({
           empId,
           year,
           month,
-          data: { extraWorkDays, absentRecords, timeChanges },
+          data: { extraWorkDays, absentRecords, timeChanges, extraHolidays },
         }),
       })
         .then((res) => {
@@ -133,7 +138,7 @@ export function useKvSync({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [extraWorkDays, absentRecords, timeChanges, selectedDoctor, empId, year, month]);
+  }, [extraWorkDays, absentRecords, timeChanges, extraHolidays, selectedDoctor, empId, year, month]);
 
   const clearKvError = () => setKvError(null);
 
