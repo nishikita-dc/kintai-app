@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useCallback } from 'react';
 import type { AbsentRecord } from '@/types';
 import { JAPANESE_HOLIDAYS, WEEK_DAYS_JA } from '@/lib/constants';
+import { isHolidayWeek } from '@/lib/holidays';
 
 interface CalendarViewProps {
   year: number;
@@ -91,7 +92,9 @@ function CalendarView({
 
     if (isExtra) {
       if (isNationalHoliday || isHoliday) {
-        if (dayOfWeek === weekdayHoliday) {
+        // 定休曜日 + 祝日のある週 → 祝日週出勤
+        // それ以外（日曜・通常定休日・祝日出勤）→ 休日出勤
+        if (dayOfWeek === weekdayHoliday && isHolidayWeek(dateStr)) {
           statusLabel = '祝日週出勤';
           bgColor = 'bg-amber-50 dark:bg-amber-900/30';
           textColor = 'text-amber-700 dark:text-amber-300';

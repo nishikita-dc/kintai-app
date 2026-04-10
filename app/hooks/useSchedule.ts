@@ -158,7 +158,7 @@ export function useSchedule({
         return;
       }
 
-      // ── 定休曜日の場合: 定休日 ↔ 祝日週出勤 ──
+      // ── 定休曜日の場合: 定休日 ↔ 出勤（祝日週なら祝日週出勤、それ以外は休日出勤） ──
       if (isWeekdayHoliday) {
         // 手動の有給等があればクリア
         if (absentRec) {

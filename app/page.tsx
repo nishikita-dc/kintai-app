@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { PreviewRow, Summary, DoctorItem } from '@/types';
 import { JAPANESE_HOLIDAYS, DEFAULT_WORK_TIMES, WEEK_DAYS_JA, ADMIN_NAME } from '@/lib/constants';
+import { isHolidayWeek as checkHolidayWeek } from '@/lib/holidays';
 import { buildKintaiCsv } from '@/lib/csvFormatter';
 import type { CsvWorkRow } from '@/lib/csvFormatter';
 import { apiHeaders } from '@/lib/api';
@@ -207,7 +208,7 @@ export default function Home() {
       if (extraWorkDays.includes(dateDisplay)) {
         isHoliday = false;
         if (holidays.includes(dayOfWeek)) {
-          if (dayOfWeek === weekdayHoliday) {
+          if (dayOfWeek === weekdayHoliday && checkHolidayWeek(dateDisplay)) {
             status = '祝日週出勤';
             isSubstitute = true;
           } else {

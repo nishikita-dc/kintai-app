@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { AbsentRecord, TimeChange } from '@/types';
 import { WEEK_DAYS_JA, USER_ABSENT_TYPES } from '@/lib/constants';
 import type { UserAbsentType } from '@/lib/constants';
+import { isHolidayWeek } from '@/lib/holidays';
 
 interface ExceptionEditorProps {
   year: number;
@@ -259,7 +260,7 @@ export default function ExceptionEditor({
             )}
             {extraWorkDays.map((d) => {
               const dow = new Date(d).getDay();
-              const isHolidayWeekWork = dow === weekdayHoliday;
+              const isHolidayWeekWork = dow === weekdayHoliday && isHolidayWeek(d);
               const label = isHolidayWeekWork ? '祝日週出勤' : '休日出勤';
               const borderCls = isHolidayWeekWork ? 'border-amber-200 dark:border-amber-800' : 'border-orange-200 dark:border-orange-800';
               const textCls = isHolidayWeekWork ? 'text-amber-800 dark:text-amber-300' : 'text-orange-800 dark:text-orange-300';

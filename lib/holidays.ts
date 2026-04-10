@@ -79,6 +79,32 @@ export function getHolidaysForYear(year: number): Record<string, string> {
   return holidays;
 }
 
+/**
+ * 指定日付の週（日〜土）に祝日が含まれるか判定する。
+ * 月またぎの祝日も正しく検出する。
+ */
+export function isHolidayWeek(dateStr: string): boolean {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dayOfWeek = d.getDay();
+  const sun = new Date(d);
+  sun.setDate(d.getDate() - dayOfWeek);
+
+  const year = d.getFullYear();
+  const holidays: Record<string, string> = {
+    ...getHolidaysForYear(year - 1),
+    ...getHolidaysForYear(year),
+    ...getHolidaysForYear(year + 1),
+  };
+
+  for (let i = 0; i < 7; i++) {
+    const check = new Date(sun);
+    check.setDate(sun.getDate() + i);
+    const key = `${check.getFullYear()}-${String(check.getMonth() + 1).padStart(2, '0')}-${String(check.getDate()).padStart(2, '0')}`;
+    if (holidays[key]) return true;
+  }
+  return false;
+}
+
 /** 指定年月の祝日マップを取得する */
 export function getHolidaysForMonth(year: number, month: number): Record<string, string> {
   const all = getHolidaysForYear(year);
