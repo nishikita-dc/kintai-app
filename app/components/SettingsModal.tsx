@@ -132,7 +132,8 @@ export default function SettingsModal({
               今月の追加定休日
             </label>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-              研修・臨時休診など、イレギュラーな休みを日付で追加できます。
+              日祝以外でクリニックが休みになる日があれば追加してください。<br />
+              例：年末年始、GW、お盆休み、臨時休診 など
             </p>
 
             {/* 追加フォーム */}
