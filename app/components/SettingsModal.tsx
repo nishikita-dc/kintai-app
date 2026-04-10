@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { getJapaneseHolidays, WEEK_DAYS_JA } from '@/lib/constants';
 import { useFocusTrap } from '@/app/hooks/useFocusTrap';
 
@@ -7,16 +8,30 @@ interface SettingsModalProps {
   weekdayHoliday: number;
   onWeekdayHolidayChange: (v: number) => void;
   empName: string;
+  year: number;
+  month: number;
+  extraHolidays: string[];
+  onExtraHolidaysChange: (days: string[]) => void;
+  onReset: () => void;
   onDoctorChange: () => void;
   onClose: () => void;
 }
 
-const DAY_NAMES = WEEK_DAYS_JA.slice(1); // 月〜土（日は固定休のため除外）
+const DAY_NAMES = WEEK_DAYS_JA.slice(1);
+
+function getWeekDay(dateStr: string) {
+  return WEEK_DAYS_JA[new Date(dateStr).getDay()];
+}
 
 export default function SettingsModal({
   weekdayHoliday,
   onWeekdayHolidayChange,
   empName,
+  year,
+  month,
+  extraHolidays,
+  onExtraHolidaysChange,
+  onReset,
   onDoctorChange,
   onClose,
 }: SettingsModalProps) {
@@ -28,6 +43,23 @@ export default function SettingsModal({
     .map(([date, name]) => ({ date, name }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
+  const [tempExtraHoliday, setTempExtraHoliday] = useState('');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+
+  const addExtraHoliday = () => {
+    if (!tempExtraHoliday) return;
+    if (!tempExtraHoliday.startsWith(monthPrefix)) return;
+    if (extraHolidays.includes(tempExtraHoliday)) return;
+    onExtraHolidaysChange([...extraHolidays, tempExtraHoliday].sort());
+    setTempExtraHoliday('');
+  };
+
+  const removeExtraHoliday = (date: string) => {
+    onExtraHolidaysChange(extraHolidays.filter((d) => d !== date));
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
@@ -38,10 +70,10 @@ export default function SettingsModal({
         role="dialog"
         aria-modal="true"
         aria-label="個人設定"
-        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700 overflow-hidden animation-scale-in"
+        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700 overflow-hidden animation-scale-in max-h-[90vh] overflow-y-auto"
       >
         {/* ヘッダー */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-600">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-600 sticky top-0 bg-white dark:bg-slate-800 z-10">
           <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
             <i className="fa-solid fa-gear text-brand-500" />
             個人設定
@@ -92,6 +124,107 @@ export default function SettingsModal({
             <p className="text-xs text-slate-400 mt-2">
               ※選択した曜日に、祝日週の振替診療が自動設定されます。
             </p>
+          </div>
+
+          {/* 追加定休日（臨時休診） */}
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
+              <i className="fa-solid fa-calendar-minus mr-2 text-violet-500" />
+              今月の追加定休日
+            </label>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+              研修・臨時休診など、イレギュラーな休みを日付で追加できます。
+            </p>
+
+            {/* 追加フォーム */}
+            <div className="flex gap-2 mb-3">
+              <input
+                type="date"
+                value={tempExtraHoliday}
+                min={`${monthPrefix}-01`}
+                max={`${monthPrefix}-${new Date(year, month, 0).getDate()}`}
+                onChange={(e) => setTempExtraHoliday(e.target.value)}
+                className="flex-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 p-2 text-sm border outline-none"
+              />
+              <button
+                onClick={addExtraHoliday}
+                disabled={!tempExtraHoliday || !tempExtraHoliday.startsWith(monthPrefix)}
+                className="bg-violet-500 hover:bg-violet-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-bold transition"
+              >
+                追加
+              </button>
+            </div>
+
+            {/* 追加定休日リスト */}
+            <div className="space-y-1.5">
+              {extraHolidays.length === 0 && (
+                <p className="text-xs text-slate-400 dark:text-slate-500">追加定休日なし</p>
+              )}
+              {extraHolidays.map((d) => (
+                <div
+                  key={d}
+                  className="flex items-center justify-between bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-800 rounded-lg px-3 py-2"
+                >
+                  <span className="text-sm font-bold text-violet-800 dark:text-violet-300">
+                    {d.slice(5)} <span className="text-violet-500">({getWeekDay(d)})</span>
+                    <span className="text-violet-400 font-normal ml-2 text-xs">臨時休診</span>
+                  </span>
+                  <button
+                    onClick={() => removeExtraHoliday(d)}
+                    className="text-violet-400 hover:text-red-500 p-1 transition"
+                    aria-label="削除"
+                  >
+                    <i className="fa-solid fa-trash-can text-xs" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 当月データのリセット */}
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-600">
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
+              <i className="fa-solid fa-rotate-left mr-2 text-red-400" />
+              当月データのリセット
+            </label>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+              {year}年{month}月分の編集内容をすべて初期状態に戻します。祝日・振替出勤が自動生成し直されます。
+            </p>
+            {showResetConfirm ? (
+              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl p-4 space-y-3">
+                <p className="text-sm font-bold text-red-700 dark:text-red-300">
+                  {year}年{month}月分のデータをリセットしますか？
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  有給・休日出勤・時間変更・追加定休日がすべて消えます。元に戻せません。
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    className="flex-1 text-sm border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-700 rounded-lg py-2 font-bold transition hover:bg-slate-50"
+                  >
+                    やめる
+                  </button>
+                  <button
+                    onClick={() => {
+                      onReset();
+                      setShowResetConfirm(false);
+                    }}
+                    className="flex-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg py-2 font-bold transition"
+                  >
+                    リセットする
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="text-sm border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 bg-white dark:bg-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 w-full"
+              >
+                <i className="fa-solid fa-rotate-left" />
+                {year}年{month}月分をリセットする
+              </button>
+            )}
           </div>
 
           {/* 祝日データ確認 */}

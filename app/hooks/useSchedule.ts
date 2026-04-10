@@ -20,8 +20,11 @@ interface UseScheduleReturn {
   setAbsentRecords: React.Dispatch<React.SetStateAction<AbsentRecord[]>>;
   timeChanges: TimeChange[];
   setTimeChanges: React.Dispatch<React.SetStateAction<TimeChange[]>>;
+  extraHolidays: string[];
+  setExtraHolidays: React.Dispatch<React.SetStateAction<string[]>>;
   toggleDateStatus: (dateStr: string) => void;
   resetSchedule: () => void;
+  resetToDefault: () => void;
 }
 
 export function useSchedule({
@@ -34,6 +37,7 @@ export function useSchedule({
   const [extraWorkDays, setExtraWorkDays] = useState<string[]>([]);
   const [absentRecords, setAbsentRecords] = useState<AbsentRecord[]>([]);
   const [timeChanges, setTimeChanges] = useState<TimeChange[]>([]);
+  const [extraHolidays, setExtraHolidays] = useState<string[]>([]); // 追加定休日
 
   const holidays = useMemo(
     () => [0, weekdayHoliday].sort((a, b) => a - b),
@@ -204,7 +208,51 @@ export function useSchedule({
     setExtraWorkDays([]);
     setAbsentRecords([]);
     setTimeChanges([]);
+    setExtraHolidays([]);
   }, []);
+
+  // 当月データをデフォルト（自動生成）にリセット
+  // useEffect の自動生成ロジックを再実行するため、一度クリアしてからフラグで再生成
+  const resetToDefault = useCallback(() => {
+    setExtraWorkDays([]);
+    setAbsentRecords([]);
+    setTimeChanges([]);
+    setExtraHolidays([]);
+
+    // 自動生成ロジックを再実行（useEffectの依存値が変わらないので手動で実行）
+    const yearHols = getJapaneseHolidays(year);
+    const prefix = `${year}-${String(month).padStart(2, '0')}`;
+    const holidaysInMonth: AbsentRecord[] = Object.entries(yearHols)
+      .filter(([date]) => date.startsWith(prefix))
+      .map(([date, name]) => ({ date, type: '祝日' as const, name }));
+
+    const adjacentHolidays: Record<string, string> = {
+      ...(month === 1 ? getJapaneseHolidays(year - 1) : {}),
+      ...yearHols,
+      ...(month === 12 ? getJapaneseHolidays(year + 1) : {}),
+    };
+
+    const subWorkDays: string[] = [];
+    const dim = new Date(year, month, 0).getDate();
+    for (let d = 1; d <= dim; d++) {
+      const cur = new Date(year, month - 1, d);
+      const dow = cur.getDay();
+      const dd = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      if (dow === weekdayHoliday && !adjacentHolidays[dd]) {
+        const sun = new Date(cur);
+        sun.setDate(cur.getDate() - dow);
+        for (let i = 0; i < 7; i++) {
+          const chk = new Date(sun);
+          chk.setDate(sun.getDate() + i);
+          const ck = `${chk.getFullYear()}-${String(chk.getMonth() + 1).padStart(2, '0')}-${String(chk.getDate()).padStart(2, '0')}`;
+          if (adjacentHolidays[ck]) { subWorkDays.push(dd); break; }
+        }
+      }
+    }
+
+    setAbsentRecords(holidaysInMonth);
+    setExtraWorkDays(subWorkDays);
+  }, [year, month, weekdayHoliday]);
 
   return {
     holidays,
@@ -214,7 +262,10 @@ export function useSchedule({
     setAbsentRecords,
     timeChanges,
     setTimeChanges,
+    extraHolidays,
+    setExtraHolidays,
     toggleDateStatus,
     resetSchedule,
+    resetToDefault,
   };
 }

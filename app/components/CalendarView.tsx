@@ -10,6 +10,7 @@ interface CalendarViewProps {
   holidays: number[];
   weekdayHoliday: number;
   extraWorkDays: string[];
+  extraHolidays?: string[];
   absentRecords: AbsentRecord[];
   onToggleDate: (dateStr: string) => void;
   disabled?: boolean;
@@ -25,6 +26,7 @@ function CalendarView({
   holidays,
   weekdayHoliday,
   extraWorkDays,
+  extraHolidays = [],
   absentRecords,
   onToggleDate,
   disabled = false,
@@ -52,8 +54,9 @@ function CalendarView({
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDay = new Date(year, month - 1, 1).getDay();
 
-  // O(1) ルックアップ用 Map（O(n*m) → O(n) に改善）
+  // O(1) ルックアップ用 Map/Set
   const extraSet = useMemo(() => new Set(extraWorkDays), [extraWorkDays]);
+  const extraHolidaySet = useMemo(() => new Set(extraHolidays), [extraHolidays]);
   const absentMap = useMemo(
     () => new Map(absentRecords.map((r) => [r.date, r])),
     [absentRecords],
@@ -77,8 +80,9 @@ function CalendarView({
 
     const isExtra = extraSet.has(dateStr);
     const absentRec = absentMap.get(dateStr);
-    const isHoliday = holidays.includes(dayOfWeek);
+    const isHoliday = holidays.includes(dayOfWeek) || extraHolidaySet.has(dateStr);
     const isNationalHoliday = !!JAPANESE_HOLIDAYS[dateStr];
+    const isExtraHoliday = extraHolidaySet.has(dateStr);
 
     let statusLabel = '';
     let bgColor = 'bg-white dark:bg-slate-800';
@@ -123,6 +127,11 @@ function CalendarView({
       bgColor = 'bg-pink-50 dark:bg-pink-900/30';
       textColor = 'text-pink-700 dark:text-pink-300';
       borderColor = 'border-pink-200';
+    } else if (isExtraHoliday) {
+      statusLabel = '臨時休診';
+      bgColor = 'bg-violet-50 dark:bg-violet-900/30';
+      textColor = 'text-violet-600 dark:text-violet-300';
+      borderColor = 'border-violet-200';
     } else if (isHoliday) {
       statusLabel = '定休日';
       bgColor = 'bg-slate-100 dark:bg-slate-700/50';
@@ -170,6 +179,7 @@ function CalendarView({
               : statusLabel === '有給' ? 'bg-emerald-400'
               : statusLabel === '欠勤' ? 'bg-red-400'
               : statusLabel === '祝日' ? 'bg-pink-400'
+              : statusLabel === '臨時休診' ? 'bg-violet-400'
               : statusLabel === '定休日' ? 'bg-slate-300 dark:bg-slate-600'
               : 'bg-blue-400'
             }`} />

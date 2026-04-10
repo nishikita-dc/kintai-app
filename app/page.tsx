@@ -46,8 +46,11 @@ export default function Home() {
     setAbsentRecords,
     timeChanges,
     setTimeChanges,
+    extraHolidays,
+    setExtraHolidays,
     toggleDateStatus,
     resetSchedule,
+    resetToDefault,
   } = useSchedule({
     year,
     month,
@@ -179,7 +182,7 @@ export default function Home() {
       const dateStr = `${year}${m}${dt}`;
       const dateDisplay = `${year}-${m}-${dt}`;
 
-      let isHoliday = holidays.includes(dayOfWeek);
+      let isHoliday = holidays.includes(dayOfWeek) || extraHolidays.includes(dateDisplay);
       let status = '通常';
       let isExtraWork = false;
       let isSubstitute = false;
@@ -255,7 +258,7 @@ export default function Home() {
       absentSub: countAbsentSub,
     });
     setShowPreview(true);
-  }, [year, month, holidays, weekdayHoliday, extraWorkDays, absentRecords, timeChanges, empId, empName]);
+  }, [year, month, holidays, weekdayHoliday, extraWorkDays, extraHolidays, absentRecords, timeChanges, empId, empName]);
 
   // プレビュー表示中は自動的に再生成
   useEffect(() => {
@@ -574,6 +577,7 @@ export default function Home() {
               holidays={holidays}
               weekdayHoliday={weekdayHoliday}
               extraWorkDays={extraWorkDays}
+              extraHolidays={extraHolidays}
               absentRecords={absentRecords}
               onToggleDate={toggleDateStatus}
               disabled={isConfirmed || isConfirming}
@@ -674,6 +678,11 @@ export default function Home() {
           weekdayHoliday={weekdayHoliday}
           onWeekdayHolidayChange={setWeekdayHoliday}
           empName={empName}
+          year={year}
+          month={month}
+          extraHolidays={extraHolidays}
+          onExtraHolidaysChange={setExtraHolidays}
+          onReset={resetToDefault}
           onDoctorChange={handleDoctorChange}
           onClose={() => setShowSettings(false)}
         />
