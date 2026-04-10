@@ -49,6 +49,8 @@ export default function Home() {
     setTimeChanges,
     extraHolidays,
     setExtraHolidays,
+    overtimeWorkDays,
+    setOvertimeWorkDays,
     toggleDateStatus,
     resetSchedule,
     resetToDefault,
@@ -80,10 +82,12 @@ export default function Home() {
     absentRecords,
     timeChanges,
     extraHolidays,
+    overtimeWorkDays,
     setExtraWorkDays,
     setAbsentRecords,
     setTimeChanges,
     setExtraHolidays,
+    setOvertimeWorkDays,
   });
 
   // ── プレビュー・CSV 状態 ──────────────────────────────────────────
@@ -211,6 +215,9 @@ export default function Home() {
           if (dayOfWeek === weekdayHoliday && checkHolidayWeek(dateDisplay)) {
             status = '祝日週出勤';
             isSubstitute = true;
+          } else if (dayOfWeek === weekdayHoliday && !overtimeWorkDays.includes(dateDisplay)) {
+            status = '振替出勤';
+            isSubstitute = true;
           } else {
             status = '休日出勤';
             isExtraWork = true;
@@ -261,7 +268,7 @@ export default function Home() {
       absentSub: countAbsentSub,
     });
     setShowPreview(true);
-  }, [year, month, holidays, weekdayHoliday, extraWorkDays, extraHolidays, absentRecords, timeChanges, empId, empName]);
+  }, [year, month, holidays, weekdayHoliday, extraWorkDays, extraHolidays, overtimeWorkDays, absentRecords, timeChanges, empId, empName]);
 
   // プレビュー表示中は自動的に再生成
   useEffect(() => {
@@ -580,6 +587,7 @@ export default function Home() {
               holidays={holidays}
               weekdayHoliday={weekdayHoliday}
               extraWorkDays={extraWorkDays}
+              overtimeWorkDays={overtimeWorkDays}
               extraHolidays={extraHolidays}
               absentRecords={absentRecords}
               onToggleDate={toggleDateStatus}
@@ -594,6 +602,7 @@ export default function Home() {
               weekdayHoliday={weekdayHoliday}
               holidays={holidays}
               extraWorkDays={extraWorkDays}
+              overtimeWorkDays={overtimeWorkDays}
               absentRecords={absentRecords}
               timeChanges={timeChanges}
               setExtraWorkDays={setExtraWorkDays}

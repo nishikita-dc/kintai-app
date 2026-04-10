@@ -11,6 +11,7 @@ interface CalendarViewProps {
   holidays: number[];
   weekdayHoliday: number;
   extraWorkDays: string[];
+  overtimeWorkDays?: string[];
   extraHolidays?: string[];
   absentRecords: AbsentRecord[];
   onToggleDate: (dateStr: string) => void;
@@ -27,6 +28,7 @@ function CalendarView({
   holidays,
   weekdayHoliday,
   extraWorkDays,
+  overtimeWorkDays = [],
   extraHolidays = [],
   absentRecords,
   onToggleDate,
@@ -57,6 +59,7 @@ function CalendarView({
 
   // O(1) ルックアップ用 Map/Set
   const extraSet = useMemo(() => new Set(extraWorkDays), [extraWorkDays]);
+  const overtimeSet = useMemo(() => new Set(overtimeWorkDays), [overtimeWorkDays]);
   const extraHolidaySet = useMemo(() => new Set(extraHolidays), [extraHolidays]);
   const absentMap = useMemo(
     () => new Map(absentRecords.map((r) => [r.date, r])),
@@ -93,12 +96,19 @@ function CalendarView({
     if (isExtra) {
       if (isNationalHoliday || isHoliday) {
         // 定休曜日 + 祝日のある週 → 祝日週出勤
-        // それ以外（日曜・通常定休日・祝日出勤）→ 休日出勤
+        // 定休曜日 + overtimeフラグ → 休日出勤
+        // 定休曜日 + extraのみ → 振替出勤
+        // それ以外 → 休日出勤
         if (dayOfWeek === weekdayHoliday && isHolidayWeek(dateStr)) {
           statusLabel = '祝日週出勤';
           bgColor = 'bg-amber-50 dark:bg-amber-900/30';
           textColor = 'text-amber-700 dark:text-amber-300';
           borderColor = 'border-amber-200';
+        } else if (dayOfWeek === weekdayHoliday && !overtimeSet.has(dateStr)) {
+          statusLabel = '振替出勤';
+          bgColor = 'bg-sky-50 dark:bg-sky-900/30';
+          textColor = 'text-sky-700 dark:text-sky-300';
+          borderColor = 'border-sky-200';
         } else {
           statusLabel = '休日出勤';
           bgColor = 'bg-orange-50 dark:bg-orange-900/30';
@@ -178,6 +188,7 @@ function CalendarView({
           <div className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl">
             <div className={`h-full rounded-b-xl ${
               statusLabel === '祝日週出勤' ? 'bg-amber-400'
+              : statusLabel === '振替出勤' ? 'bg-sky-400'
               : statusLabel === '休日出勤' ? 'bg-orange-400'
               : statusLabel === '有給' ? 'bg-emerald-400'
               : statusLabel === '欠勤' ? 'bg-red-400'

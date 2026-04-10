@@ -55,10 +55,19 @@ export function validateKvData(data: unknown): KvData | null {
     extraHolidays = d.extraHolidays as string[];
   }
 
+  // overtimeWorkDays も省略可能
+  let overtimeWorkDays: string[] | undefined;
+  if (d.overtimeWorkDays !== undefined) {
+    if (!Array.isArray(d.overtimeWorkDays)) return null;
+    if (!d.overtimeWorkDays.every((v: unknown) => typeof v === 'string' && DATE_RE.test(v))) return null;
+    overtimeWorkDays = d.overtimeWorkDays as string[];
+  }
+
   return {
     extraWorkDays: d.extraWorkDays as string[],
     absentRecords: d.absentRecords as AbsentRecord[],
     timeChanges: d.timeChanges as TimeChange[],
     ...(extraHolidays !== undefined ? { extraHolidays } : {}),
+    ...(overtimeWorkDays !== undefined ? { overtimeWorkDays } : {}),
   };
 }

@@ -39,6 +39,8 @@ export interface KvData {
   absentRecords: AbsentRecord[];
   timeChanges: TimeChange[];
   extraHolidays?: string[];
+  /** 休日出勤（振替出勤と区別するためのフラグ。extraWorkDaysに含まれる日のうち、ここにも含まれるものは「休日出勤」扱い） */
+  overtimeWorkDays?: string[];
 }
 
 export interface PostBody {

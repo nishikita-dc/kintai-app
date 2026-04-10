@@ -12,6 +12,7 @@ interface ExceptionEditorProps {
   weekdayHoliday: number;
   holidays: number[];
   extraWorkDays: string[];
+  overtimeWorkDays?: string[];
   absentRecords: AbsentRecord[];
   timeChanges: TimeChange[];
   setExtraWorkDays: React.Dispatch<React.SetStateAction<string[]>>;
@@ -30,6 +31,7 @@ export default function ExceptionEditor({
   weekdayHoliday,
   holidays,
   extraWorkDays,
+  overtimeWorkDays = [],
   absentRecords,
   timeChanges,
   setExtraWorkDays,
@@ -260,11 +262,13 @@ export default function ExceptionEditor({
             )}
             {extraWorkDays.map((d) => {
               const dow = new Date(d).getDay();
+              const isOvertime = overtimeWorkDays.includes(d);
               const isHolidayWeekWork = dow === weekdayHoliday && isHolidayWeek(d);
-              const label = isHolidayWeekWork ? '祝日週出勤' : '休日出勤';
-              const borderCls = isHolidayWeekWork ? 'border-amber-200 dark:border-amber-800' : 'border-orange-200 dark:border-orange-800';
-              const textCls = isHolidayWeekWork ? 'text-amber-800 dark:text-amber-300' : 'text-orange-800 dark:text-orange-300';
-              const badgeCls = isHolidayWeekWork ? 'text-amber-500' : 'text-orange-500';
+              const isSubstituteWork = dow === weekdayHoliday && !isHolidayWeekWork && !isOvertime;
+              const label = isHolidayWeekWork ? '祝日週出勤' : isSubstituteWork ? '振替出勤' : '休日出勤';
+              const borderCls = isHolidayWeekWork ? 'border-amber-200 dark:border-amber-800' : isSubstituteWork ? 'border-sky-200 dark:border-sky-800' : 'border-orange-200 dark:border-orange-800';
+              const textCls = isHolidayWeekWork ? 'text-amber-800 dark:text-amber-300' : isSubstituteWork ? 'text-sky-800 dark:text-sky-300' : 'text-orange-800 dark:text-orange-300';
+              const badgeCls = isHolidayWeekWork ? 'text-amber-500' : isSubstituteWork ? 'text-sky-500' : 'text-orange-500';
               return (
               <div
                 key={d}

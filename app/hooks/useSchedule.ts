@@ -22,6 +22,8 @@ interface UseScheduleReturn {
   setTimeChanges: React.Dispatch<React.SetStateAction<TimeChange[]>>;
   extraHolidays: string[];
   setExtraHolidays: React.Dispatch<React.SetStateAction<string[]>>;
+  overtimeWorkDays: string[];
+  setOvertimeWorkDays: React.Dispatch<React.SetStateAction<string[]>>;
   toggleDateStatus: (dateStr: string) => void;
   resetSchedule: () => void;
   resetToDefault: () => void;
@@ -38,6 +40,7 @@ export function useSchedule({
   const [absentRecords, setAbsentRecords] = useState<AbsentRecord[]>([]);
   const [timeChanges, setTimeChanges] = useState<TimeChange[]>([]);
   const [extraHolidays, setExtraHolidays] = useState<string[]>([]); // 追加定休日
+  const [overtimeWorkDays, setOvertimeWorkDays] = useState<string[]>([]); // 休日出勤フラグ
 
   const holidays = useMemo(
     () => [0, weekdayHoliday].sort((a, b) => a - b),
@@ -158,16 +161,24 @@ export function useSchedule({
         return;
       }
 
-      // ── 定休曜日の場合: 定休日 ↔ 出勤（祝日週なら祝日週出勤、それ以外は休日出勤） ──
+      // ── 定休曜日の場合 ──
       if (isWeekdayHoliday) {
-        // 手動の有給等があればクリア
         if (absentRec) {
           setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
         }
-        if (isExtra) {
-          setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
-        } else {
+        const isOvertime = overtimeWorkDays.includes(dateStr);
+
+        if (!isExtra) {
+          // 定休日 → 振替出勤（extraに追加）
           setExtraWorkDays((prev) => [...prev, dateStr].sort());
+          setOvertimeWorkDays((prev) => prev.filter((d) => d !== dateStr));
+        } else if (!isOvertime) {
+          // 振替出勤 → 休日出勤（overtimeに追加）
+          setOvertimeWorkDays((prev) => [...prev, dateStr].sort());
+        } else {
+          // 休日出勤 → 定休日（両方クリア）
+          setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
+          setOvertimeWorkDays((prev) => prev.filter((d) => d !== dateStr));
         }
         return;
       }
@@ -201,7 +212,7 @@ export function useSchedule({
         }
       }
     },
-    [extraWorkDays, absentRecords, holidays],
+    [extraWorkDays, absentRecords, holidays, overtimeWorkDays, extraHolidays],
   );
 
   const resetSchedule = useCallback(() => {
@@ -209,6 +220,7 @@ export function useSchedule({
     setAbsentRecords([]);
     setTimeChanges([]);
     setExtraHolidays([]);
+    setOvertimeWorkDays([]);
   }, []);
 
   // 当月データをデフォルト（自動生成）にリセット
@@ -218,6 +230,7 @@ export function useSchedule({
     setAbsentRecords([]);
     setTimeChanges([]);
     setExtraHolidays([]);
+    setOvertimeWorkDays([]);
 
     // 自動生成ロジックを再実行（useEffectの依存値が変わらないので手動で実行）
     const yearHols = getJapaneseHolidays(year);
@@ -264,6 +277,8 @@ export function useSchedule({
     setTimeChanges,
     extraHolidays,
     setExtraHolidays,
+    overtimeWorkDays,
+    setOvertimeWorkDays,
     toggleDateStatus,
     resetSchedule,
     resetToDefault,
