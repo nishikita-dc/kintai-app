@@ -166,19 +166,46 @@ export function useSchedule({
         if (absentRec) {
           setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
         }
-        const isOvertime = overtimeWorkDays.includes(dateStr);
 
-        if (!isExtra) {
-          // 定休日 → 振替出勤（extraに追加）
-          setExtraWorkDays((prev) => [...prev, dateStr].sort());
-          setOvertimeWorkDays((prev) => prev.filter((d) => d !== dateStr));
-        } else if (!isOvertime) {
-          // 振替出勤 → 休日出勤（overtimeに追加）
-          setOvertimeWorkDays((prev) => [...prev, dateStr].sort());
+        // 祝日週かどうか判定
+        const inHolidayWeek = (() => {
+          const dt = new Date(dateStr + 'T00:00:00');
+          const dow = dt.getDay();
+          const sun = new Date(dt);
+          sun.setDate(dt.getDate() - dow);
+          const yh = getJapaneseHolidays(parseInt(dateStr.slice(0, 4), 10));
+          for (let i = 0; i < 7; i++) {
+            const c = new Date(sun);
+            c.setDate(sun.getDate() + i);
+            const k = `${c.getFullYear()}-${String(c.getMonth() + 1).padStart(2, '0')}-${String(c.getDate()).padStart(2, '0')}`;
+            if (yh[k]) return true;
+          }
+          return false;
+        })();
+
+        if (inHolidayWeek) {
+          // 祝日週: 祝日週出勤 ↔ 定休日（2段階）
+          if (isExtra) {
+            setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
+          } else {
+            setExtraWorkDays((prev) => [...prev, dateStr].sort());
+          }
         } else {
-          // 休日出勤 → 定休日（両方クリア）
-          setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
-          setOvertimeWorkDays((prev) => prev.filter((d) => d !== dateStr));
+          // 通常週: 定休日 → 振替出勤 → 休日出勤 → 定休日（3段階）
+          const isOvertime = overtimeWorkDays.includes(dateStr);
+
+          if (!isExtra) {
+            // 定休日 → 振替出勤
+            setExtraWorkDays((prev) => [...prev, dateStr].sort());
+            setOvertimeWorkDays((prev) => prev.filter((d) => d !== dateStr));
+          } else if (!isOvertime) {
+            // 振替出勤 → 休日出勤
+            setOvertimeWorkDays((prev) => [...prev, dateStr].sort());
+          } else {
+            // 休日出勤 → 定休日
+            setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
+            setOvertimeWorkDays((prev) => prev.filter((d) => d !== dateStr));
+          }
         }
         return;
       }
