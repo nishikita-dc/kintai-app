@@ -114,22 +114,38 @@ export function useSchedule({
       const isWeekdayHoliday = dayOfWeek === holidays.find((h) => h !== 0); // 日曜以外の定休曜日
 
       // ── 祝日の場合: 祝日 ↔ 休日出勤 ──
+      // 祝日の日は他の種別（有給・欠勤・振替休日）に変更せず、
+      // 祝日（休み）↔ 休日出勤 の2択のみ
       if (isNationalHoliday) {
-        if (absentRec?.type === '祝日') {
-          // 祝日 → 休日出勤（extraに追加、absentの祝日はそのまま残す→リストに表示継続）
-          setExtraWorkDays((prev) => [...prev, dateStr].sort());
+        // 手動で設定された有給・欠勤・振替休日があれば先にクリア
+        if (absentRec && absentRec.type !== '祝日') {
+          setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
+          // 祝日レコードを復元
+          const holidayName = yearHolidays[dateStr];
+          setAbsentRecords((prev) =>
+            [...prev, { date: dateStr, type: '祝日' as const, name: holidayName }].sort((a, b) =>
+              a.date.localeCompare(b.date),
+            ),
+          );
           return;
         }
+
         if (isExtra) {
           // 休日出勤 → 祝日に戻す
           setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
-          return;
+        } else {
+          // 祝日 → 休日出勤
+          setExtraWorkDays((prev) => [...prev, dateStr].sort());
         }
         return;
       }
 
       // ── 日曜の場合: 定休日 ↔ 休日出勤 ──
       if (isSunday) {
+        // 手動の有給等があればクリア
+        if (absentRec) {
+          setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
+        }
         if (isExtra) {
           setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
         } else {
@@ -140,6 +156,10 @@ export function useSchedule({
 
       // ── 定休曜日の場合: 定休日 ↔ 祝日週出勤 ──
       if (isWeekdayHoliday) {
+        // 手動の有給等があればクリア
+        if (absentRec) {
+          setAbsentRecords((prev) => prev.filter((r) => r.date !== dateStr));
+        }
         if (isExtra) {
           setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
         } else {
@@ -149,6 +169,11 @@ export function useSchedule({
       }
 
       // ── 通常出勤日の場合: 通常 → 有給 → 欠勤 → 振替休日 → 通常 ──
+      // extraが残っていたらクリア
+      if (isExtra) {
+        setExtraWorkDays((prev) => prev.filter((d) => d !== dateStr));
+      }
+
       if (!absentRec) {
         setAbsentRecords((prev) =>
           [...prev, { date: dateStr, type: '有給' as const }].sort((a, b) =>
@@ -156,7 +181,6 @@ export function useSchedule({
           ),
         );
       } else if (absentRec.type === '祝日') {
-        // 通常出勤日に祝日レコードがある場合は触らない
         return;
       } else {
         const currentIdx = ABSENT_CYCLE.indexOf(absentRec.type);
