@@ -37,8 +37,7 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   const dialogRef = useFocusTrap(onClose);
 
-  const currentYear = new Date().getFullYear();
-  const yearHolidays = getJapaneseHolidays(currentYear);
+  const yearHolidays = getJapaneseHolidays(year);
   const allHolidaysList = Object.entries(yearHolidays)
     .map(([date, name]) => ({ date, name }))
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -232,7 +231,7 @@ export default function SettingsModal({
             <summary className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-600 transition list-none flex justify-between items-center select-none">
               <span>
                 <i className="fa-regular fa-calendar-days mr-2" />
-                {currentYear}年の祝日データ確認
+                {year}年の祝日データ確認
               </span>
               <i className="fa-solid fa-chevron-down text-slate-300 group-open:rotate-180 transition-transform" />
             </summary>

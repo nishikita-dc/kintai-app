@@ -83,26 +83,29 @@ export function getHolidaysForYear(year: number): Record<string, string> {
  * 指定日付の週（日〜土）に祝日が含まれるか判定する。
  * 月またぎの祝日も正しく検出する。
  */
+const holidayWeekCache = new Map<string, boolean>();
+
 export function isHolidayWeek(dateStr: string): boolean {
+  const cached = holidayWeekCache.get(dateStr);
+  if (cached !== undefined) return cached;
+
   const d = new Date(dateStr + 'T00:00:00');
   const dayOfWeek = d.getDay();
   const sun = new Date(d);
   sun.setDate(d.getDate() - dayOfWeek);
 
-  const year = d.getFullYear();
-  const holidays: Record<string, string> = {
-    ...getHolidaysForYear(year - 1),
-    ...getHolidaysForYear(year),
-    ...getHolidaysForYear(year + 1),
-  };
-
+  let result = false;
   for (let i = 0; i < 7; i++) {
     const check = new Date(sun);
     check.setDate(sun.getDate() + i);
-    const key = `${check.getFullYear()}-${String(check.getMonth() + 1).padStart(2, '0')}-${String(check.getDate()).padStart(2, '0')}`;
-    if (holidays[key]) return true;
+    const y = check.getFullYear();
+    const key = `${y}-${String(check.getMonth() + 1).padStart(2, '0')}-${String(check.getDate()).padStart(2, '0')}`;
+    // getHolidaysForYear はキャッシュ付き（constants.ts経由）
+    if (getHolidaysForYear(y)[key]) { result = true; break; }
   }
-  return false;
+
+  holidayWeekCache.set(dateStr, result);
+  return result;
 }
 
 /** 指定年月の祝日マップを取得する */

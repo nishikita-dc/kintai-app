@@ -120,6 +120,11 @@ export function useSchedule({
       const isSunday = dayOfWeek === 0;
       const isWeekdayHoliday = dayOfWeek === holidays.find((h) => h !== 0); // 日曜以外の定休曜日
 
+      // ── 臨時休診日の場合: タップ不可（設定モーダルで管理） ──
+      if (extraHolidays.includes(dateStr)) {
+        return;
+      }
+
       // ── 祝日の場合: 祝日 ↔ 休日出勤 ──
       // 祝日の日は他の種別（有給・欠勤・振替休日）に変更せず、
       // 祝日（休み）↔ 休日出勤 の2択のみ

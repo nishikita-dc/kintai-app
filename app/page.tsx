@@ -396,7 +396,7 @@ export default function Home() {
   // ── ローディング・未選択ガード ────────────────────────────────────
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="text-slate-400 text-sm">
           <i className="fa-solid fa-spinner fa-spin mr-2" />
           読み込み中...
@@ -553,7 +553,7 @@ export default function Home() {
           {/* KV 読み込み中オーバーレイ */}
           <div className="relative">
             {isKvLoading && (
-              <div className="absolute inset-0 z-10 rounded-lg p-2 space-y-4">
+              <div className="absolute inset-0 z-10 rounded-lg p-2 space-y-4 bg-white dark:bg-slate-800">
                 {/* カレンダースケルトン */}
                 <div className="grid grid-cols-7 gap-1">
                   {Array.from({ length: 7 }).map((_, i) => (
@@ -655,7 +655,7 @@ export default function Home() {
       </footer>
 
       {/* ボトムナビゲーション */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 glass border-t border-white/30 dark:border-slate-700 shadow-lg sm:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-20 glass border-t border-white/30 dark:border-slate-700 shadow-lg sm:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="max-w-3xl mx-auto flex justify-around py-2">
           <button
             onClick={() => document.getElementById('section-calendar')?.scrollIntoView({ behavior: 'smooth' })}
@@ -694,7 +694,11 @@ export default function Home() {
           month={month}
           extraHolidays={extraHolidays}
           onExtraHolidaysChange={setExtraHolidays}
-          onReset={resetToDefault}
+          onReset={() => {
+            canAutoSaveRef.current = false;
+            resetToDefault();
+            setTimeout(() => { canAutoSaveRef.current = true; }, 0);
+          }}
           onDoctorChange={handleDoctorChange}
           onClose={() => setShowSettings(false)}
         />

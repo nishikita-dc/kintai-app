@@ -241,7 +241,7 @@ export default function ExceptionEditor({
               type="date"
               value={tempExtraDate}
               onChange={(e) => { setTempExtraDate(e.target.value); setExtraError(null); }}
-              className="flex-1 rounded-lg border-slate-300 p-2 text-sm border focus:ring-2 focus:ring-orange-200 outline-none"
+              className="flex-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 p-2 text-sm border focus:ring-2 focus:ring-orange-200 outline-none"
             />
             <button
               onClick={addExtraWork}
@@ -320,8 +320,8 @@ export default function ExceptionEditor({
                 onChange={(e) => { setTempInTime(e.target.value); setChangeError(null); }}
                 className={`w-full rounded p-1.5 text-sm border outline-none ${
                   changeError && tempInTime && tempOutTime && tempInTime >= tempOutTime
-                    ? 'border-red-400 bg-red-50'
-                    : 'border-slate-300'
+                    ? 'border-red-400 bg-red-50 dark:bg-red-900/30'
+                    : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200'
                 }`}
               />
             </div>
@@ -334,8 +334,8 @@ export default function ExceptionEditor({
                 onChange={(e) => { setTempOutTime(e.target.value); setChangeError(null); }}
                 className={`w-full rounded p-1.5 text-sm border outline-none ${
                   changeError && tempInTime && tempOutTime && tempInTime >= tempOutTime
-                    ? 'border-red-400 bg-red-50'
-                    : 'border-slate-300'
+                    ? 'border-red-400 bg-red-50 dark:bg-red-900/30'
+                    : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200'
                 }`}
               />
             </div>

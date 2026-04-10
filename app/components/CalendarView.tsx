@@ -48,7 +48,7 @@ function CalendarView({
     const dx = e.changedTouches[0].clientX - touchStart.current.x;
     const dy = e.changedTouches[0].clientY - touchStart.current.y;
     // 水平方向のスワイプのみ検出（垂直スクロールと区別）
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 2) {
       if (dx > 0) onSwipePrev?.();
       else onSwipeNext?.();
     }
@@ -74,7 +74,7 @@ function CalendarView({
 
   for (let i = 0; i < firstDay; i++) {
     cells.push(
-      <div key={`empty-${i}`} className="h-20 bg-slate-50/50 rounded-xl" />,
+      <div key={`empty-${i}`} className="h-20 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl" />,
     );
   }
 

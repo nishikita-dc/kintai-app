@@ -78,6 +78,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (!isValidEmpId(empId)) {
       return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
     }
+    if (!isValidYearMonth(year as number, month as number)) {
+      return jsonResponse({ error: 'year/month の値が不正です' }, cors, 400);
+    }
 
     // summary は省略可能。存在する場合だけ数値チェック
     type SummaryShape = ConfirmData['summary'];
@@ -131,14 +134,14 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (typeof empId !== 'string' || typeof year !== 'number' || typeof month !== 'number') {
       return jsonResponse({ error: 'empId, year, month は必須です' }, cors, 400);
     }
-    if (!isValidEmpId(empId as string)) {
+    if (!isValidEmpId(empId)) {
       return jsonResponse({ error: 'empId の形式が不正です' }, cors, 400);
     }
-    if (!isValidYearMonth(year as number, month as number)) {
+    if (!isValidYearMonth(year, month)) {
       return jsonResponse({ error: 'year/month の値が不正です' }, cors, 400);
     }
 
-    const key = kvConfirmKey(empId as string, year as number, month as number);
+    const key = kvConfirmKey(empId, year, month);
     await env.KINTAI_DATA.delete(key);
 
     return jsonResponse({ ok: true }, cors);
