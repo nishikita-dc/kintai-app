@@ -334,7 +334,7 @@
         <div class="space-y-2">
           <div class="flex items-center gap-2 text-xs">
             <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500"></i>
-            <span class="text-slate-700"><span class="font-bold">ミニカレンダー</span> — 出勤・有給・休日出勤などが色分けで表示</span>
+            <span class="text-slate-700"><span class="font-bold">ミニカレンダー</span> — 出勤・有給・休日出勤・臨時休診などが色分けで表示</span>
           </div>
           <div class="flex items-center gap-2 text-xs">
             <i data-lucide="list" class="w-3.5 h-3.5 text-indigo-500"></i>
@@ -347,6 +347,21 @@
           <div class="flex items-center gap-2 text-xs">
             <i data-lucide="download" class="w-3.5 h-3.5 text-indigo-500"></i>
             <span class="text-slate-700"><span class="font-bold">CSV個別ダウンロード</span> — そのドクターのCSVだけを手元にダウンロード</span>
+          </div>
+        </div>
+
+        <!-- カレンダー色分け凡例 -->
+        <div class="mt-3 pt-3 border-t border-ads-border">
+          <p class="text-xs font-bold text-slate-600 mb-2">カレンダーの色分け</p>
+          <div class="grid grid-cols-4 gap-1.5 text-[10px]">
+            <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-indigo-100"></div><span class="text-slate-500">出勤</span></div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-emerald-100"></div><span class="text-slate-500">有給</span></div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-orange-100"></div><span class="text-slate-500">振替出勤</span></div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-red-100"></div><span class="text-slate-500">欠勤</span></div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-purple-100"></div><span class="text-slate-500">振替休日</span></div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-amber-100"></div><span class="text-slate-500">祝日</span></div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-violet-100"></div><span class="text-slate-500">臨時休診</span></div>
+            <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-gray-100"></div><span class="text-slate-500">定休</span></div>
           </div>
         </div>
       </div>
@@ -375,6 +390,22 @@
           <p class="text-[11px] text-violet-700">
             <i data-lucide="info" class="w-3 h-3 inline-block mr-1 -mt-0.5"></i>
             モック画面は見本のため、実際のデータは表示されません。操作の練習にお使いください
+          </p>
+        </div>
+      </div>
+    </div>
+    <!-- 機能5: 新人Dr案内文コピー -->
+    <div class="bg-white border border-ads-border rounded-2xl overflow-hidden">
+      <div class="bg-amber-50 px-4 py-2.5 flex items-center gap-2 border-b border-amber-100">
+        <i data-lucide="copy" class="w-4 h-4 text-amber-600"></i>
+        <p class="text-sm font-bold text-amber-800">新人Dr向け案内文（コピペ用）</p>
+      </div>
+      <div class="p-4">
+        <p class="text-xs text-ads-muted mb-3">「ガイド・リンク」セクションに、新人Drへそのまま送れるテンプレートを用意しています。「コピー」ボタンを押すだけでクリップボードにコピーされ、LINEなどにそのまま貼り付けられます。</p>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <p class="text-[11px] text-amber-700">
+            <i data-lucide="info" class="w-3 h-3 inline-block mr-1 -mt-0.5"></i>
+            案内文にはアプリURL、ホーム画面追加手順（Safari/Chrome）、初回設定手順が含まれています
           </p>
         </div>
       </div>

@@ -210,35 +210,51 @@
   </div>
 
   <p class="text-sm text-ads-muted mb-4">
-    祝日・振替出勤はアプリが<span class="font-bold text-slate-700">自動入力済み</span>。変更がある日だけ操作します。
+    祝日・振替出勤はアプリが<span class="font-bold text-slate-700">自動入力済み</span>。変更がある日だけ操作します。<br>
+    カレンダーは<span class="font-bold text-slate-700">左右スワイプ</span>で前月・翌月に移動できます。
   </p>
 
-  <!-- 3 types of exceptions -->
+  <!-- タップ切替パターン -->
+  <div class="bg-ads-surface border border-ads-border rounded-xl p-4 mb-4">
+    <p class="text-sm font-bold text-slate-900 mb-3"><i data-lucide="pointer" class="w-4 h-4 inline-block mr-1 -mt-0.5"></i>カレンダーのタップ切替</p>
+    <div class="space-y-2 text-xs">
+      <div class="bg-white border border-ads-border rounded-lg p-2.5">
+        <p class="font-bold text-slate-700 mb-1">通常出勤日</p>
+        <div class="flex items-center gap-1 flex-wrap"><span class="bg-white border border-slate-200 rounded px-1.5 py-0.5">通常</span><span class="text-ads-dim">→</span><span class="bg-emerald-100 text-emerald-700 rounded px-1.5 py-0.5">有給</span><span class="text-ads-dim">→</span><span class="bg-red-100 text-red-700 rounded px-1.5 py-0.5">欠勤</span><span class="text-ads-dim">→</span><span class="bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">振替休日</span><span class="text-ads-dim">→ 通常</span></div>
+      </div>
+      <div class="bg-white border border-ads-border rounded-lg p-2.5">
+        <p class="font-bold text-slate-700 mb-1">定休曜日（祝日のある週）</p>
+        <div class="flex items-center gap-1"><span class="bg-slate-100 text-slate-500 rounded px-1.5 py-0.5">定休日</span><span class="text-ads-dim">↔</span><span class="bg-amber-100 text-amber-700 rounded px-1.5 py-0.5">祝日週出勤</span></div>
+      </div>
+      <div class="bg-white border border-ads-border rounded-lg p-2.5">
+        <p class="font-bold text-slate-700 mb-1">定休曜日（通常の週）</p>
+        <div class="flex items-center gap-1 flex-wrap"><span class="bg-slate-100 text-slate-500 rounded px-1.5 py-0.5">定休日</span><span class="text-ads-dim">→</span><span class="bg-sky-100 text-sky-700 rounded px-1.5 py-0.5">振替出勤</span><span class="text-ads-dim">→</span><span class="bg-orange-100 text-orange-700 rounded px-1.5 py-0.5">休日出勤</span><span class="text-ads-dim">→ 定休日</span></div>
+      </div>
+      <div class="bg-white border border-ads-border rounded-lg p-2.5">
+        <p class="font-bold text-slate-700 mb-1">祝日・日曜</p>
+        <div class="flex items-center gap-1"><span class="bg-pink-100 text-pink-700 rounded px-1.5 py-0.5">祝日/定休</span><span class="text-ads-dim">↔</span><span class="bg-orange-100 text-orange-700 rounded px-1.5 py-0.5">休日出勤</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 入力方法 -->
   <div class="space-y-3 mb-4">
     <div class="bg-white border border-emerald-200 rounded-xl p-4 flex items-start gap-3">
-      <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-        <i data-lucide="calendar-off" class="w-5 h-5 text-emerald-600"></i>
-      </div>
+      <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0"><i data-lucide="calendar-off" class="w-5 h-5 text-emerald-600"></i></div>
       <div>
-        <p class="text-sm font-bold text-slate-900">有給・欠勤</p>
+        <p class="text-sm font-bold text-slate-900">有給・欠勤・振替休日</p>
         <p class="text-xs text-ads-muted mt-0.5">カレンダーの日付をタップで切替。またはリストから日付+種類を選んで追加</p>
       </div>
     </div>
-
     <div class="bg-white border border-orange-200 rounded-xl p-4 flex items-start gap-3">
-      <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
-        <i data-lucide="briefcase" class="w-5 h-5 text-orange-600"></i>
-      </div>
+      <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0"><i data-lucide="briefcase" class="w-5 h-5 text-orange-600"></i></div>
       <div>
-        <p class="text-sm font-bold text-slate-900">休日出勤</p>
-        <p class="text-xs text-ads-muted mt-0.5">定休日や祝日に出勤した日を追加</p>
+        <p class="text-sm font-bold text-slate-900">振替出勤・休日出勤</p>
+        <p class="text-xs text-ads-muted mt-0.5">定休日や祝日をタップで出勤に切替。振替出勤（水色）→休日出勤（オレンジ）の順</p>
       </div>
     </div>
-
     <div class="bg-white border border-purple-200 rounded-xl p-4 flex items-start gap-3">
-      <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
-        <i data-lucide="clock" class="w-5 h-5 text-purple-600"></i>
-      </div>
+      <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0"><i data-lucide="clock" class="w-5 h-5 text-purple-600"></i></div>
       <div>
         <p class="text-sm font-bold text-slate-900">時間変更</p>
         <p class="text-xs text-ads-muted mt-0.5">遅刻・早退・残業など、通常と異なる出退勤時刻がある日を追加</p>
@@ -353,14 +369,28 @@
         <i data-lucide="calendar-x" class="w-4 h-4 text-slate-500"></i>
         <p class="text-sm font-bold text-slate-900">定休日</p>
       </div>
-      <p class="text-xs text-ads-muted">ヘッダー右上の歯車アイコンから変更。自動保存</p>
+      <p class="text-xs text-ads-muted">歯車アイコンから変更。自動保存</p>
     </div>
     <div class="bg-ads-surface border border-ads-border rounded-xl p-4">
       <div class="flex items-center gap-2 mb-2">
         <i data-lucide="chevrons-left-right" class="w-4 h-4 text-slate-500"></i>
         <p class="text-sm font-bold text-slate-900">対象月の切替</p>
       </div>
-      <p class="text-xs text-ads-muted">対象月バナーの左右ボタンで前月・翌月に移動</p>
+      <p class="text-xs text-ads-muted">左右ボタンまたはスワイプで前月・翌月に移動</p>
+    </div>
+    <div class="bg-violet-50 border border-violet-200 rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="calendar-minus" class="w-4 h-4 text-violet-500"></i>
+        <p class="text-sm font-bold text-slate-900">追加定休日</p>
+      </div>
+      <p class="text-xs text-ads-muted">日祝以外でクリニックが休みの日を追加。年末年始・GW・お盆・臨時休診など</p>
+    </div>
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="rotate-ccw" class="w-4 h-4 text-red-500"></i>
+        <p class="text-sm font-bold text-slate-900">リセット</p>
+      </div>
+      <p class="text-xs text-ads-muted">当月の編集をすべて初期状態に戻す。確認ダイアログ付き。元に戻せません</p>
     </div>
   </div>
 </div>
@@ -392,7 +422,7 @@
         <div class="flex flex-col gap-2">
           <div class="flex items-start gap-2.5">
             <div class="w-5 h-5 bg-red-200 text-red-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">1</div>
-            <p class="text-xs text-slate-700">対象月バナーの<span class="font-bold">左矢印で先月に切り替え</span></p>
+            <p class="text-xs text-slate-700"><span class="font-bold">左スワイプまたは左矢印で先月に切り替え</span></p>
           </div>
           <div class="flex items-start gap-2.5">
             <div class="w-5 h-5 bg-red-200 text-red-700 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black mt-0.5">2</div>

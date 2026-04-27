@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow">
+  <meta property="og:title" content="コンテキストエンジニアリングとは">
+  <meta property="og:description" content="AIエージェントを賢く動かす「情報の渡し方」を図解で解説します。">
+  <meta property="og:type" content="article">
+  <title>コンテキストエンジニアリングとは</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FFFFFF'/><rect x='8' y='8' width='84' height='84' rx='14' fill='none' stroke='%233B82F6' stroke-width='4'/><circle cx='32' cy='40' r='10' fill='%233B82F6' opacity='0.8'/><circle cx='68' cy='40' r='10' fill='%2360A5FA' opacity='0.8'/><rect x='25' y='62' width='50' height='6' rx='3' fill='%2394A3B8' opacity='0.6'/><rect x='30' y='74' width='40' height='6' rx='3' fill='%2394A3B8' opacity='0.3'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ads: {
+              bg: '#FFFFFF',
+              surface: '#F8FAFC',
+              hover: '#F1F5F9',
+              border: '#E2E8F0',
+              accent: '#3B82F6',
+              'accent-light': '#2563EB',
+              text: '#1E293B',
+              muted: '#64748B',
+              dim: '#94A3B8',
+              positive: '#10B981',
+              negative: '#EF4444',
+              warning: '#F59E0B',
+            }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans JP"', '"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', '"Yu Gothic UI"', '"Meiryo"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { border-top: none !important; }
+      .rounded-xl { break-inside: avoid; }
+      .md\:flex-row { flex-direction: row !important; }
+      .md\:hidden { display: none !important; }
+      .hidden.md\:block { display: block !important; }
+      .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+      .md\:mb-20 { margin-bottom: 5rem !important; }
+      .md\:py-16 { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+      .bg-clip-text.text-transparent {
+        -webkit-background-clip: initial !important;
+        background-clip: initial !important;
+        color: #2563EB !important;
+        -webkit-text-fill-color: #2563EB !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-ads-bg text-slate-600 antialiased leading-relaxed border-t-4 border-ads-accent">
+  <div class="no-print max-w-3xl mx-auto px-5 pt-2 flex justify-end">
+    <button onclick="window.print()" class="flex items-center gap-1.5 text-xs text-ads-dim hover:text-ads-accent transition-colors cursor-pointer">
+      <i data-lucide="download" class="w-3.5 h-3.5"></i>
+      PDF
+    </button>
+  </div>
+  <main class="max-w-3xl mx-auto px-5 py-10 md:py-16">
+<!-- CONTENT_START -->
+
+<!-- ============================================================ -->
+<!--  HERO                                                        -->
+<!-- ============================================================ -->
+<div class="text-center mb-8 md:mb-10">
+  <div class="inline-flex items-center gap-2 bg-ads-accent/10 text-ads-accent-light px-4 py-1.5 rounded-full text-sm font-medium mb-6">
+    <i data-lucide="bot" class="w-4 h-4"></i>
+    AI / テクノロジー
+  </div>
+  <h1 class="text-3xl md:text-5xl font-black text-slate-900 tracking-tight mb-6">
+    <span class="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">コンテキスト</span><br>エンジニアリング
+  </h1>
+  <p class="text-lg text-ads-muted max-w-xl mx-auto leading-relaxed">
+    AIをうまく動かすには、「何を指示するか」より「何を渡すか」が大事。<br>
+    ひとことで言うと ──
+  </p>
+</div>
+
+
+<!-- ============================================================ -->
+<!--  ONE-PAGE SUMMARY                                            -->
+<!-- ============================================================ -->
+<div class="bg-ads-surface border border-ads-border rounded-2xl p-6 md:p-10 mb-6">
+  <div class="text-center mb-8 md:mb-10">
+    <p class="text-xl md:text-2xl font-black text-slate-900 mb-2">
+      コンテキストエンジニアリング＝AIに渡す<span class="text-ads-accent-light">「情報の束」</span>を最適化する技術
+    </p>
+    <p class="text-sm text-ads-muted">
+      プロンプト（指示文）だけでなく、AIが一度に受け取る情報全体を設計する
+    </p>
+  </div>
+
+  <!-- Core diagram: what goes into context -->
+  <div class="bg-white border border-ads-border rounded-xl p-6 mb-8">
+    <div class="text-xs text-ads-dim font-medium text-center mb-5 tracking-widest uppercase">AIが一度に受け取る「コンテキスト」の中身</div>
+    <div class="flex flex-col items-center gap-2">
+      <!-- Outer box representing context window -->
+      <div class="w-full border-2 border-blue-200 bg-blue-50/40 rounded-xl p-4">
+        <div class="text-xs font-bold text-blue-600 mb-3 flex items-center gap-1.5">
+          <i data-lucide="box" class="w-3.5 h-3.5"></i>
+          コンテキストウィンドウ（AIが一度に読める量）
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div class="bg-blue-500/10 border border-blue-300/50 rounded-lg p-2.5 text-center">
+            <i data-lucide="file-text" class="w-4 h-4 text-blue-600 mx-auto mb-1"></i>
+            <div class="text-[11px] font-bold text-blue-700">システムプロンプト</div>
+            <div class="text-[10px] text-ads-dim mt-0.5">行動指針・役割定義</div>
+          </div>
+          <div class="bg-violet-500/10 border border-violet-300/50 rounded-lg p-2.5 text-center">
+            <i data-lucide="wrench" class="w-4 h-4 text-violet-600 mx-auto mb-1"></i>
+            <div class="text-[11px] font-bold text-violet-700">ツール定義</div>
+            <div class="text-[10px] text-ads-dim mt-0.5">使える機能の一覧</div>
+          </div>
+          <div class="bg-emerald-500/10 border border-emerald-300/50 rounded-lg p-2.5 text-center">
+            <i data-lucide="message-square" class="w-4 h-4 text-emerald-600 mx-auto mb-1"></i>
+            <div class="text-[11px] font-bold text-emerald-700">会話履歴</div>
+            <div class="text-[10px] text-ads-dim mt-0.5">これまでのやり取り</div>
+          </div>
+          <div class="bg-amber-500/10 border border-amber-300/50 rounded-lg p-2.5 text-center">
+            <i data-lucide="database" class="w-4 h-4 text-amber-600 mx-auto mb-1"></i>
+            <div class="text-[11px] font-bold text-amber-700">外部データ</div>
+            <div class="text-[10px] text-ads-dim mt-0.5">ファイル・検索結果等</div>
+          </div>
+        </div>
+      </div>
+      <!-- Arrow down to AI -->
+      <div class="flex flex-col items-center gap-0.5 py-1">
+        <span class="text-[10px] text-ads-dim">すべてまとめてAIへ</span>
+        <i data-lucide="arrow-down" class="w-5 h-5 text-ads-accent"></i>
+      </div>
+      <!-- AI -->
+      <div class="bg-gradient-to-r from-blue-600 to-violet-600 rounded-xl px-6 py-3 flex items-center gap-3">
+        <i data-lucide="cpu" class="w-6 h-6 text-white"></i>
+        <div class="text-white font-bold text-sm">AI（LLM）がすべてを読んで回答する</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div class="flex items-center gap-4 mb-5">
+    <div class="flex-1 border-t border-ads-border/50"></div>
+    <div class="text-[11px] text-ads-dim font-medium">コンテキストエンジニアリングが必要な場面</div>
+    <div class="flex-1 border-t border-ads-border/50"></div>
+  </div>
+
+  <!-- Use cases as pills -->
+  <div class="flex flex-wrap justify-center gap-2">
+    <div class="flex items-center gap-1.5 bg-white border border-ads-border rounded-full px-3.5 py-1.5 text-xs text-slate-700">
+      <i data-lucide="code-2" class="w-3.5 h-3.5 text-blue-500"></i>
+      コーディングAIエージェント
+    </div>
+    <div class="flex items-center gap-1.5 bg-white border border-ads-border rounded-full px-3.5 py-1.5 text-xs text-slate-700">
+      <i data-lucide="search" class="w-3.5 h-3.5 text-violet-500"></i>
+      AIリサーチアシスタント
+    </div>
+    <div class="flex items-center gap-1.5 bg-white border border-ads-border rounded-full px-3.5 py-1.5 text-xs text-slate-700">
+      <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-500"></i>
+      長期会話チャットボット
+    </div>
+    <div class="flex items-center gap-1.5 bg-white border border-ads-border rounded-full px-3.5 py-1.5 text-xs text-slate-700">
+      <i data-lucide="git-branch" class="w-3.5 h-3.5 text-amber-500"></i>
+      自律型タスク実行AI
+    </div>
+  </div>
+</div>
+
+<p class="text-center text-ads-muted mb-16 md:mb-20">
+  ここから先で、なぜこれが重要で、どう実践するかをひとつずつ解説していきます。
+</p>
+
+
+<!-- ============================================================ -->
+<!--  SECTION 1: プロンプトエンジニアリングとの違い                -->
+<!-- ============================================================ -->
+<section class="mb-16 md:mb-20">
+  <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-500/10 flex-shrink-0">
+      <i data-lucide="git-compare" class="w-5 h-5 text-blue-600"></i>
+    </div>
+    <h2 class="text-xl md:text-2xl font-bold text-slate-900">「プロンプト」との違いは？</h2>
+  </div>
+
+  <p class="mb-6 leading-relaxed">
+    ChatGPTなどを使うとき、「もっとうまい聞き方をしよう」と工夫したことはありませんか？ これが<strong class="text-slate-900">プロンプトエンジニアリング</strong>（Prompt Engineering）です。指示の文章をうまく書く技術です。
+  </p>
+  <p class="mb-8 leading-relaxed">
+    しかし最近のAIは、1回の質問に答えるだけでなく、何十回もやり取りしながら長い仕事をこなします。そうなると「指示文の書き方」だけでは足りません。「<strong class="text-slate-900">何をどれだけAIに見せるか</strong>」全体を設計する必要があります。それが<strong class="text-slate-900">コンテキストエンジニアリング</strong>（Context Engineering）です。
+  </p>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+    <!-- プロンプトエンジニアリング -->
+    <div class="bg-ads-surface border border-ads-border rounded-xl p-6">
+      <div class="inline-flex items-center gap-1.5 bg-blue-500/10 text-blue-600 px-3 py-1 rounded-full text-xs font-bold mb-4">
+        <i data-lucide="pencil" class="w-3 h-3"></i>
+        プロンプトエンジニアリング（従来）
+      </div>
+      <ul class="space-y-2.5">
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
+          <span class="text-sm leading-relaxed">指示文（プロンプト）の<strong class="text-slate-800">書き方・言い回し</strong>を工夫する</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
+          <span class="text-sm leading-relaxed">主に<strong class="text-slate-800">1回のやり取り</strong>で完結するタスクに有効</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
+          <span class="text-sm leading-relaxed">「文章を要約して」「〇〇を翻訳して」など<strong class="text-slate-800">単発の依頼</strong></span>
+        </li>
+      </ul>
+      <div class="mt-4 pt-4 border-t border-ads-border/50">
+        <div class="flex items-center gap-1.5 text-xs text-ads-muted">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+          たとえるなら「メールの文面を工夫する」こと
+        </div>
+      </div>
+    </div>
+
+    <!-- コンテキストエンジニアリング -->
+    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+      <div class="inline-flex items-center gap-1.5 bg-blue-500/20 text-blue-700 px-3 py-1 rounded-full text-xs font-bold mb-4">
+        <i data-lucide="layers" class="w-3 h-3"></i>
+        コンテキストエンジニアリング（新しい考え方）
+      </div>
+      <ul class="space-y-2.5">
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"></i>
+          <span class="text-sm leading-relaxed">AIに渡す<strong class="text-slate-800">情報全体（コンテキスト）</strong>を設計する</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"></i>
+          <span class="text-sm leading-relaxed">長時間・多ステップの<strong class="text-slate-800">エージェント型AI</strong>に必須</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"></i>
+          <span class="text-sm leading-relaxed">会話履歴・ツール・ファイルなど<strong class="text-slate-800">何を見せ、何を隠すか</strong>を管理する</span>
+        </li>
+      </ul>
+      <div class="mt-4 pt-4 border-t border-blue-200/70">
+        <div class="flex items-center gap-1.5 text-xs text-blue-600/70">
+          <i data-lucide="briefcase" class="w-3.5 h-3.5"></i>
+          たとえるなら「新入社員のデスクに何の資料を置くか決める」こと
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-ads-accent/5 border border-ads-accent/20 rounded-xl p-5">
+    <div class="flex items-start gap-3">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-ads-accent/10 flex-shrink-0 mt-0.5">
+        <i data-lucide="lightbulb" class="w-4 h-4 text-ads-accent-light"></i>
+      </div>
+      <div>
+        <p class="font-bold text-ads-accent-light mb-1">ポイント</p>
+        <p class="text-ads-muted leading-relaxed text-sm">
+          AIが一度に読める情報量には上限（<strong class="text-slate-800">コンテキストウィンドウ</strong>）があります。その中に何を入れるかが成否を分けます。プロンプトの書き方よりも、<strong class="text-slate-800">「情報の選び方・渡し方」</strong>の方が重要になってきているのです。
+          <span class="block mt-1 text-xs text-ads-dim">出典: <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" class="underline decoration-ads-dim/30 hover:text-ads-accent transition-colors">Anthropic Engineering Blog</a></span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!--  SECTION 2: コンテキストロット - なぜ重要か                   -->
+<!-- ============================================================ -->
+<section class="mb-16 md:mb-20">
+  <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-red-500/10 flex-shrink-0">
+      <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+    </div>
+    <h2 class="text-xl md:text-2xl font-bold text-slate-900">AIも「情報の詰め込みすぎ」で迷子になる</h2>
+  </div>
+
+  <p class="mb-6 leading-relaxed">
+    人間と同じように、AIにも一度に処理できる情報量の限界があります。「もっとたくさん情報を与えれば精度が上がる」と思いがちですが、実は逆効果になることがあります。
+  </p>
+
+  <p class="mb-8 leading-relaxed">
+    研究によって明らかになった<strong class="text-slate-900">「コンテキストロット」（Context Rot）</strong>という現象があります。情報量が増えるほど、AIが最初の方の情報を正確に思い出せなくなる現象です。
+  </p>
+
+  <!-- Context rot visualization -->
+  <div class="bg-ads-surface border border-ads-border rounded-xl p-6 md:p-8 mb-8">
+    <h3 class="text-base font-bold text-slate-900 text-center mb-6">情報量とAIの精度の関係</h3>
+    <div class="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+      <!-- Left: small context -->
+      <div class="flex-1 text-center">
+        <div class="inline-block mb-4">
+          <div class="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 w-40 mx-auto">
+            <div class="space-y-1.5 mb-3">
+              <div class="h-2 bg-emerald-400 rounded-full w-full"></div>
+              <div class="h-2 bg-emerald-400 rounded-full w-4/5"></div>
+              <div class="h-2 bg-emerald-400 rounded-full w-full"></div>
+            </div>
+            <div class="text-[10px] text-emerald-700 font-medium">少ない情報</div>
+          </div>
+        </div>
+        <div class="flex items-center justify-center gap-1.5 text-emerald-600 font-bold text-sm mb-1">
+          <i data-lucide="check-circle" class="w-4 h-4"></i>
+          精度が高い
+        </div>
+        <p class="text-xs text-ads-muted">必要な情報だけが<br>整理されている状態</p>
+      </div>
+
+      <!-- Arrow -->
+      <div class="flex items-center justify-center md:flex-col gap-2 py-2">
+        <div class="text-xs text-ads-dim text-center">情報が<br>増えると</div>
+        <i data-lucide="arrow-right" class="w-6 h-6 text-red-400 hidden md:block"></i>
+        <i data-lucide="arrow-down" class="w-6 h-6 text-red-400 md:hidden"></i>
+      </div>
+
+      <!-- Right: large context -->
+      <div class="flex-1 text-center">
+        <div class="inline-block mb-4">
+          <div class="bg-red-50 border-2 border-red-300 rounded-xl p-4 w-40 mx-auto">
+            <div class="space-y-1 mb-3">
+              <div class="h-1.5 bg-red-300 rounded-full w-full opacity-40"></div>
+              <div class="h-1.5 bg-red-300 rounded-full w-4/5 opacity-40"></div>
+              <div class="h-1.5 bg-red-400 rounded-full w-full opacity-60"></div>
+              <div class="h-1.5 bg-red-400 rounded-full w-3/4 opacity-60"></div>
+              <div class="h-1.5 bg-red-400 rounded-full w-full opacity-70"></div>
+              <div class="h-1.5 bg-red-500 rounded-full w-4/5 opacity-80"></div>
+              <div class="h-1.5 bg-red-500 rounded-full w-full opacity-90"></div>
+              <div class="h-1.5 bg-red-600 rounded-full w-3/4"></div>
+            </div>
+            <div class="text-[10px] text-red-700 font-medium">大量の情報</div>
+          </div>
+        </div>
+        <div class="flex items-center justify-center gap-1.5 text-red-600 font-bold text-sm mb-1">
+          <i data-lucide="alert-circle" class="w-4 h-4"></i>
+          精度が落ちる
+        </div>
+        <p class="text-xs text-ads-muted">最初の方の情報を<br>正確に思い出せない</p>
+      </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="mt-6 pt-5 border-t border-ads-border/50 bg-white rounded-lg p-4">
+      <div class="flex items-start gap-3">
+        <i data-lucide="info" class="w-4 h-4 text-ads-accent mt-0.5 flex-shrink-0"></i>
+        <p class="text-xs text-ads-muted leading-relaxed">
+          これはAIの設計上の特性です。AIはすべてのトークン（単語のかたまり）同士の関係を計算するため、情報が多いほど1つ1つへの「注目」が薄まります。人間が長時間の会議で最初の議題を忘れてしまうのと似た現象です。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attention budget analogy -->
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
+    <div class="flex items-start gap-3">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/15 flex-shrink-0 mt-0.5">
+        <i data-lucide="wallet" class="w-4 h-4 text-amber-600"></i>
+      </div>
+      <div>
+        <p class="font-bold text-amber-700 mb-2">「注意の予算」という考え方</p>
+        <p class="text-sm text-ads-muted leading-relaxed">
+          AIには<strong class="text-slate-800">「注意の予算」（Attention Budget）</strong>があります。お財布の中のお金のように、情報が増えるほどその予算が消費されていきます。価値の低い情報にも予算が使われると、本当に重要な情報への注目度が下がってしまいます。<strong class="text-slate-800">コンテキストエンジニアリングの核心は、この予算を賢く使うこと</strong>です。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center bg-slate-900 text-white rounded-xl p-6">
+    <p class="text-lg font-black mb-1">目標は「小さく、でも濃い」情報の束</p>
+    <p class="text-sm text-slate-300">高品質なトークン（情報のかたまり）を最小限に絞ることが、AIの性能を最大化する</p>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!--  SECTION 3: 良いコンテキストの作り方                          -->
+<!-- ============================================================ -->
+<section class="mb-16 md:mb-20">
+  <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500/10 flex-shrink-0">
+      <i data-lucide="sliders" class="w-5 h-5 text-emerald-600"></i>
+    </div>
+    <h2 class="text-xl md:text-2xl font-bold text-slate-900">コンテキストを上手に作る3つのポイント</h2>
+  </div>
+
+  <p class="mb-8 leading-relaxed">
+    Anthropicが実際のエージェント開発で見えてきたベストプラクティスがあります。コンテキストを構成する主要な3要素について、それぞれの「正解」と「やりがちなミス」を見ていきましょう。
+  </p>
+
+  <!-- 3 components: system prompt, tools, examples -->
+  <div class="space-y-4 mb-8">
+
+    <!-- 1: System Prompt -->
+    <div class="bg-ads-surface border border-ads-border rounded-xl overflow-hidden">
+      <div class="flex items-center gap-3 px-6 py-4 border-b border-ads-border/60">
+        <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i>
+        </div>
+        <div>
+          <div class="font-bold text-slate-900 text-sm">1. システムプロンプト — 「ちょうどいい高度」の指示を書く</div>
+          <div class="text-xs text-ads-dim">AIへの行動指針・役割定義</div>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-red-600 mb-2">
+              <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+              詳細すぎる（NG）
+            </div>
+            <p class="text-xs text-ads-muted leading-relaxed">「もしユーザーが〇〇と言ったら、必ず〇〇し、その後〇〇せよ」のような細かい条件分岐が山盛り。壊れやすく、維持も大変。</p>
+          </div>
+          <div class="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 mb-2">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              ちょうどいい（OK）
+            </div>
+            <p class="text-xs text-ads-muted leading-relaxed">目的・役割・原則を明確に伝えつつ、細かい判断はAIに任せる。必要十分な情報を渡し、柔軟性も残す。</p>
+          </div>
+          <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-red-600 mb-2">
+              <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+              曖昧すぎる（NG）
+            </div>
+            <p class="text-xs text-ads-muted leading-relaxed">「ユーザーの役に立ってください」だけ。AIが何をすべきかわからず、的外れな行動をとりやすい。</p>
+          </div>
+        </div>
+        <div class="bg-blue-50 rounded-lg p-3 flex items-start gap-2.5">
+          <i data-lucide="lightbulb" class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5"></i>
+          <p class="text-xs text-ads-muted leading-relaxed"><strong class="text-slate-800">コツ:</strong> まずシンプルなプロンプトでテストし、失敗したパターンに応じて少しずつ指示を追加していくのがベスト。最初から完璧を目指さない。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2: Tools -->
+    <div class="bg-ads-surface border border-ads-border rounded-xl overflow-hidden">
+      <div class="flex items-center gap-3 px-6 py-4 border-b border-ads-border/60">
+        <div class="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="wrench" class="w-4 h-4 text-violet-600"></i>
+        </div>
+        <div>
+          <div class="font-bold text-slate-900 text-sm">2. ツール — 使える機能は少なく・明確に</div>
+          <div class="text-xs text-ads-dim">AIが使えるアクション・機能の定義</div>
+        </div>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-ads-muted leading-relaxed mb-4">
+          AIエージェントには「ツール」（検索する・ファイルを読む・コードを実行するなど）を与えます。しかし、ツールが多すぎると「どれを使えばいいか？」とAIが迷います。人間のエンジニアが「どっちを使うべきかわからないツール」は、AIにもわかりません。
+        </p>
+        <div class="flex flex-col md:flex-row gap-3">
+          <div class="flex-1 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="text-xs font-bold text-red-600 mb-2 flex items-center gap-1.5">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+              よくある失敗
+            </div>
+            <p class="text-xs text-ads-muted">機能が重複したツールが乱立。AIが誤ったツールを選んで失敗する。</p>
+          </div>
+          <div class="flex-1 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div class="text-xs font-bold text-emerald-600 mb-2 flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              理想の状態
+            </div>
+            <p class="text-xs text-ads-muted">「このツールはこの目的だけ」が明確。用途が被らず、説明が具体的。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3: Examples -->
+    <div class="bg-ads-surface border border-ads-border rounded-xl overflow-hidden">
+      <div class="flex items-center gap-3 px-6 py-4 border-b border-ads-border/60">
+        <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="book-open" class="w-4 h-4 text-amber-600"></i>
+        </div>
+        <div>
+          <div class="font-bold text-slate-900 text-sm">3. 具体例（Few-shot） — 「千の言葉より一つの見本」</div>
+          <div class="text-xs text-ads-dim">入出力の具体的なサンプル</div>
+        </div>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-ads-muted leading-relaxed mb-4">
+          「〇〇のような場合はこうして」とルールを書き連ねるより、<strong class="text-slate-800">「例えばこういう入力にはこう出力する」という見本を見せる</strong>方が、AIはずっとよく理解します。AIにとって、良い具体例は千の言葉に値します。
+        </p>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div class="flex items-start gap-2.5">
+            <i data-lucide="info" class="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0"></i>
+            <p class="text-xs text-ads-muted leading-relaxed">ただし、網羅的にすべてのケースを詰め込もうとするのはNG。<strong class="text-slate-800">バラエティ豊かで代表的な例を少数厳選する</strong>ことが重要です。例を詰め込みすぎると、コンテキストウィンドウを無駄に使い、AIが混乱します。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!--  SECTION 4: ジャストインタイム検索                             -->
+<!-- ============================================================ -->
+<section class="mb-16 md:mb-20">
+  <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-500/10 flex-shrink-0">
+      <i data-lucide="zap" class="w-5 h-5 text-cyan-600"></i>
+    </div>
+    <h2 class="text-xl md:text-2xl font-bold text-slate-900">賢いAIは「必要なときだけ」情報を取りに行く</h2>
+  </div>
+
+  <p class="mb-6 leading-relaxed">
+    大量のドキュメントや情報がある仕事をAIに任せるとき、どうやって情報を渡せばよいでしょうか？
+  </p>
+
+  <p class="mb-8 leading-relaxed">
+    「全部最初から渡しておく」のは直感的ですが、コンテキストウィンドウを圧迫して精度が落ちます。最新のアプローチは、AIがファイルパスやURLなどの<strong class="text-slate-900">「住所」だけを持っておき、必要になったときに中身を取りに行く</strong>「ジャストインタイム（Just-in-Time）」という方法です。
+  </p>
+
+  <!-- Comparison: pre-loading vs just-in-time -->
+  <div class="bg-ads-surface border border-ads-border rounded-xl p-6 md:p-8 mb-8">
+    <h3 class="text-base font-bold text-slate-900 text-center mb-6">情報の渡し方：2つのアプローチの違い</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <!-- Pre-loading -->
+      <div class="bg-orange-50 border border-orange-200 rounded-xl p-5">
+        <div class="text-xs font-bold text-orange-600 mb-4 flex items-center gap-1.5">
+          <i data-lucide="package" class="w-3.5 h-3.5"></i>
+          事前に全部詰め込む方法（旧来）
+        </div>
+        <div class="flex items-start gap-2 mb-3">
+          <!-- suitcase icon area -->
+          <div class="w-12 h-12 bg-orange-100 border border-orange-300 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i data-lucide="archive" class="w-6 h-6 text-orange-600"></i>
+          </div>
+          <div>
+            <p class="text-xs text-ads-muted leading-relaxed">海外旅行に、「使うかもしれないから」と荷物をパンパンに詰めて出発するイメージ。重くて動きにくい。</p>
+          </div>
+        </div>
+        <ul class="space-y-1.5">
+          <li class="flex items-center gap-1.5 text-xs text-red-600">
+            <i data-lucide="x" class="w-3 h-3 flex-shrink-0"></i>
+            コンテキストがすぐ満杯になる
+          </li>
+          <li class="flex items-center gap-1.5 text-xs text-red-600">
+            <i data-lucide="x" class="w-3 h-3 flex-shrink-0"></i>
+            古い情報がいつまでも残る
+          </li>
+          <li class="flex items-center gap-1.5 text-xs text-orange-600">
+            <i data-lucide="check" class="w-3 h-3 flex-shrink-0"></i>
+            すぐ参照できる（速い）
+          </li>
+        </ul>
+      </div>
+
+      <!-- Just-in-time -->
+      <div class="bg-cyan-50 border-2 border-cyan-200 rounded-xl p-5">
+        <div class="text-xs font-bold text-cyan-600 mb-4 flex items-center gap-1.5">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          必要なときだけ取りに行く方法（推奨）
+        </div>
+        <div class="flex items-start gap-2 mb-3">
+          <div class="w-12 h-12 bg-cyan-100 border border-cyan-300 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i data-lucide="map" class="w-6 h-6 text-cyan-600"></i>
+          </div>
+          <div>
+            <p class="text-xs text-ads-muted leading-relaxed">住所メモだけ持って出発し、現地で必要なものを調達するイメージ。軽くて柔軟。</p>
+          </div>
+        </div>
+        <ul class="space-y-1.5">
+          <li class="flex items-center gap-1.5 text-xs text-emerald-600">
+            <i data-lucide="check" class="w-3 h-3 flex-shrink-0"></i>
+            コンテキストを効率よく使える
+          </li>
+          <li class="flex items-center gap-1.5 text-xs text-emerald-600">
+            <i data-lucide="check" class="w-3 h-3 flex-shrink-0"></i>
+            常に最新情報を参照できる
+          </li>
+          <li class="flex items-center gap-1.5 text-xs text-cyan-600">
+            <i data-lucide="minus" class="w-3 h-3 flex-shrink-0"></i>
+            取りに行く分、少し時間がかかる
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Real example: Claude Code -->
+    <div class="bg-white border border-ads-border rounded-lg p-4">
+      <div class="text-xs font-bold text-ads-muted mb-2 flex items-center gap-1.5">
+        <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
+        実例: AnthropicのAIコーディングツール「Claude Code」
+      </div>
+      <p class="text-xs text-ads-muted leading-relaxed">
+        大規模なコードベースを分析するとき、すべてのコードをコンテキストに詰め込まず、<strong class="text-slate-800">ファイルパスだけを持ち、必要なファイルだけを読み込む</strong>アプローチを採用。「glob」「grep」などのコマンドを使って目的のファイルを探し、必要な部分だけを読む。これにより大規模なプロジェクトでも精度を保てる。
+        <span class="block mt-1 text-[10px] text-ads-dim">出典: <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" class="underline decoration-ads-dim/30 hover:text-ads-accent transition-colors">Anthropic Engineering Blog</a></span>
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!--  SECTION 5: 長期タスクへの対応3つの技                         -->
+<!-- ============================================================ -->
+<section class="mb-16 md:mb-20">
+  <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-violet-500/10 flex-shrink-0">
+      <i data-lucide="clock" class="w-5 h-5 text-violet-600"></i>
+    </div>
+    <h2 class="text-xl md:text-2xl font-bold text-slate-900">長時間の仕事をAIに任せるための3つの技</h2>
+  </div>
+
+  <p class="mb-6 leading-relaxed">
+    コードの大規模書き換えや、複数日かかるリサーチなど、<strong class="text-slate-900">長時間・多ステップの作業</strong>をAIエージェントに任せるとき、コンテキストウィンドウの限界という問題が立ちはだかります。
+  </p>
+  <p class="mb-8 leading-relaxed">
+    「もっと大きいコンテキストウィンドウが出れば解決」と思うかもしれませんが、大きくなってもコンテキストロットの問題は残ります。そこでAnthropicが開発した3つの技術があります。
+  </p>
+
+  <!-- 3 techniques -->
+  <div class="space-y-5">
+
+    <!-- Technique 1: Compaction -->
+    <div class="bg-ads-surface border border-ads-border rounded-xl overflow-hidden">
+      <div class="flex items-center gap-4 px-6 py-5">
+        <div class="w-10 h-10 rounded-xl bg-blue-500 text-white font-black text-lg flex items-center justify-center flex-shrink-0">1</div>
+        <div>
+          <div class="font-bold text-slate-900 mb-0.5">コンパクション（Compaction）— 議事録を要約してリスタート</div>
+          <div class="text-xs text-ads-dim">長い会話の内容を圧縮して、新鮮なコンテキストで再スタートする技法</div>
+        </div>
+      </div>
+      <div class="px-6 pb-6">
+        <!-- Visual flow -->
+        <div class="flex flex-col md:flex-row items-center gap-2 md:gap-0 mb-5">
+          <div class="flex-1 bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+            <i data-lucide="message-square" class="w-5 h-5 text-blue-500 mx-auto mb-1"></i>
+            <div class="text-xs font-bold text-blue-700">長くなった会話履歴</div>
+            <div class="text-[10px] text-ads-dim mt-0.5">コンテキストが満杯に近い状態</div>
+          </div>
+          <div class="flex items-center justify-center md:w-12 py-1 md:py-0">
+            <i data-lucide="arrow-right" class="w-4 h-4 text-ads-dim hidden md:block"></i>
+            <i data-lucide="arrow-down" class="w-4 h-4 text-ads-dim md:hidden"></i>
+          </div>
+          <div class="flex-1 bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+            <i data-lucide="file-output" class="w-5 h-5 text-amber-500 mx-auto mb-1"></i>
+            <div class="text-xs font-bold text-amber-700">AIが要約を生成</div>
+            <div class="text-[10px] text-ads-dim mt-0.5">重要な決定・未解決事項を保持</div>
+          </div>
+          <div class="flex items-center justify-center md:w-12 py-1 md:py-0">
+            <i data-lucide="arrow-right" class="w-4 h-4 text-ads-dim hidden md:block"></i>
+            <i data-lucide="arrow-down" class="w-4 h-4 text-ads-dim md:hidden"></i>
+          </div>
+          <div class="flex-1 bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
+            <i data-lucide="refresh-cw" class="w-5 h-5 text-emerald-500 mx-auto mb-1"></i>
+            <div class="text-xs font-bold text-emerald-700">要約で新規スタート</div>
+            <div class="text-[10px] text-ads-dim mt-0.5">パフォーマンスを維持して継続</div>
+          </div>
+        </div>
+        <div class="bg-white border border-ads-border/60 rounded-lg p-3 flex items-start gap-2.5">
+          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5"></i>
+          <p class="text-xs text-ads-muted leading-relaxed">たとえるなら、長時間の会議の後に「今日の決定事項と残課題をまとめました」という議事録を作って翌日の会議に臨むようなもの。Claude Codeでは「ツールの呼び出し結果」など再確認不要な情報を積極的に削除してコンテキストを軽くする。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technique 2: Structured note-taking -->
+    <div class="bg-ads-surface border border-ads-border rounded-xl overflow-hidden">
+      <div class="flex items-center gap-4 px-6 py-5">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white font-black text-lg flex items-center justify-center flex-shrink-0">2</div>
+        <div>
+          <div class="font-bold text-slate-900 mb-0.5">構造化メモ（Structured Note-taking）— 外付けの記憶</div>
+          <div class="text-xs text-ads-dim">コンテキストの外にメモを保存し、必要なときに読み込む</div>
+        </div>
+      </div>
+      <div class="px-6 pb-6">
+        <!-- Visual: context window + external memory -->
+        <div class="flex flex-col md:flex-row items-center gap-4 mb-5">
+          <div class="flex-1 border-2 border-blue-200 bg-blue-50/40 rounded-xl p-4">
+            <div class="text-[10px] font-bold text-blue-600 mb-2">コンテキストウィンドウ（作業中の脳）</div>
+            <div class="bg-white rounded-lg p-2 text-[10px] text-ads-muted text-center border border-blue-100">
+              現在の作業に必要な情報だけ
+            </div>
+            <div class="flex items-center justify-center gap-1.5 mt-2">
+              <i data-lucide="arrow-up" class="w-3 h-3 text-emerald-500"></i>
+              <span class="text-[10px] text-emerald-600">必要なメモを読み込む</span>
+            </div>
+            <div class="flex items-center justify-center gap-1.5">
+              <i data-lucide="arrow-down" class="w-3 h-3 text-emerald-500"></i>
+              <span class="text-[10px] text-emerald-600">重要な情報をメモに保存</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-center">
+            <i data-lucide="arrow-left-right" class="w-5 h-5 text-emerald-500 hidden md:block"></i>
+            <i data-lucide="arrow-up-down" class="w-5 h-5 text-emerald-500 md:hidden"></i>
+          </div>
+          <div class="flex-1 border-2 border-emerald-200 bg-emerald-50/40 rounded-xl p-4">
+            <div class="text-[10px] font-bold text-emerald-700 mb-2">外部メモファイル（外付け記憶）</div>
+            <div class="space-y-1">
+              <div class="bg-white rounded-md p-1.5 text-[10px] text-ads-muted border border-emerald-100 flex items-center gap-1">
+                <i data-lucide="check-square" class="w-3 h-3 text-emerald-500"></i>
+                進捗メモ（TODO.md）
+              </div>
+              <div class="bg-white rounded-md p-1.5 text-[10px] text-ads-muted border border-emerald-100 flex items-center gap-1">
+                <i data-lucide="bookmark" class="w-3 h-3 text-emerald-500"></i>
+                重要な決定事項
+              </div>
+              <div class="bg-white rounded-md p-1.5 text-[10px] text-ads-muted border border-emerald-100 flex items-center gap-1">
+                <i data-lucide="map" class="w-3 h-3 text-emerald-500"></i>
+                探索済みの情報マップ
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white border border-ads-border/60 rounded-lg p-3 flex items-start gap-2.5">
+          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5"></i>
+          <p class="text-xs text-ads-muted leading-relaxed">「Claude がポケモンをプレイ」という実験では、AIが何千ものゲームステップにわたって独自のメモを作成し、「ルート1で1234ステップトレーニング中。ピカチュウがレベル8→目標10」のように進捗を管理。コンテキストをリセットしても、メモを読み直して同じ戦略を継続できた。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technique 3: Multi-agent -->
+    <div class="bg-ads-surface border border-ads-border rounded-xl overflow-hidden">
+      <div class="flex items-center gap-4 px-6 py-5">
+        <div class="w-10 h-10 rounded-xl bg-violet-500 text-white font-black text-lg flex items-center justify-center flex-shrink-0">3</div>
+        <div>
+          <div class="font-bold text-slate-900 mb-0.5">マルチエージェント（Multi-agent）— 分業で攻略</div>
+          <div class="text-xs text-ads-dim">複数のAIエージェントが役割分担して作業する構造</div>
+        </div>
+      </div>
+      <div class="px-6 pb-6">
+        <!-- Visual: orchestrator + sub-agents -->
+        <div class="flex flex-col items-center gap-3 mb-5">
+          <!-- Lead agent -->
+          <div class="bg-violet-500/10 border-2 border-violet-300 rounded-xl px-6 py-3 flex items-center gap-3">
+            <i data-lucide="crown" class="w-5 h-5 text-violet-600"></i>
+            <div>
+              <div class="text-sm font-bold text-violet-700">リードエージェント（指揮官）</div>
+              <div class="text-[10px] text-ads-dim">高レベルな計画・結果の統合・判断</div>
+            </div>
+          </div>
+
+          <!-- Arrows to sub-agents -->
+          <div class="flex items-center gap-8">
+            <div class="flex flex-col items-center gap-1">
+              <i data-lucide="arrow-down-left" class="w-4 h-4 text-violet-400"></i>
+              <span class="text-[9px] text-ads-dim">タスクを割り振る</span>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+              <i data-lucide="arrow-down" class="w-4 h-4 text-violet-400"></i>
+              <span class="text-[9px] text-ads-dim"></span>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+              <i data-lucide="arrow-down-right" class="w-4 h-4 text-violet-400"></i>
+              <span class="text-[9px] text-ads-dim"></span>
+            </div>
+          </div>
+
+          <!-- Sub-agents -->
+          <div class="grid grid-cols-3 gap-3 w-full">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+              <i data-lucide="search" class="w-4 h-4 text-blue-500 mx-auto mb-1"></i>
+              <div class="text-[11px] font-bold text-blue-700">サブエージェントA</div>
+              <div class="text-[10px] text-ads-dim mt-0.5">情報収集担当</div>
+              <div class="mt-2 text-[9px] text-ads-dim bg-white rounded px-1.5 py-0.5 border border-blue-100">独自のコンテキストで深く調査</div>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
+              <i data-lucide="code-2" class="w-4 h-4 text-emerald-500 mx-auto mb-1"></i>
+              <div class="text-[11px] font-bold text-emerald-700">サブエージェントB</div>
+              <div class="text-[10px] text-ads-dim mt-0.5">コード作成担当</div>
+              <div class="mt-2 text-[9px] text-ads-dim bg-white rounded px-1.5 py-0.5 border border-emerald-100">独自のコンテキストで実装</div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+              <i data-lucide="check-square" class="w-4 h-4 text-amber-500 mx-auto mb-1"></i>
+              <div class="text-[11px] font-bold text-amber-700">サブエージェントC</div>
+              <div class="text-[10px] text-ads-dim mt-0.5">検証担当</div>
+              <div class="mt-2 text-[9px] text-ads-dim bg-white rounded px-1.5 py-0.5 border border-amber-100">独自のコンテキストで確認</div>
+            </div>
+          </div>
+
+          <!-- Results back to lead -->
+          <div class="flex items-center gap-1.5 text-xs text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-3 py-1.5">
+            <i data-lucide="corner-up-right" class="w-3.5 h-3.5"></i>
+            各エージェントが「要約済みの結果（1,000〜2,000トークン）」だけをリードに返す
+          </div>
+        </div>
+
+        <div class="bg-white border border-ads-border/60 rounded-lg p-3 flex items-start gap-2.5">
+          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-violet-500 flex-shrink-0 mt-0.5"></i>
+          <p class="text-xs text-ads-muted leading-relaxed">各サブエージェントは何万トークンを使って深く調査するが、リードには要約だけを返す。リードエージェントはすっきりした情報を元に判断できる。プロジェクトをチームで分業するのと同じ発想。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- When to use which -->
+  <div class="mt-6 bg-ads-surface border border-ads-border rounded-xl p-5">
+    <h3 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+      <i data-lucide="git-branch" class="w-4 h-4 text-ads-accent"></i>
+      どれを使えばいい？
+    </h3>
+    <div class="space-y-2">
+      <div class="flex items-start gap-3 text-sm">
+        <div class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0 mt-1"></div>
+        <span class="text-ads-muted leading-relaxed"><strong class="text-slate-800">コンパクション</strong> — やり取りが多く「会話の流れを保ちたい」タスク（カスタマーサポートAIなど）</span>
+      </div>
+      <div class="flex items-start gap-3 text-sm">
+        <div class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></div>
+        <span class="text-ads-muted leading-relaxed"><strong class="text-slate-800">構造化メモ</strong> — マイルストーンのある長期開発タスク（数日かかるコーディングなど）</span>
+      </div>
+      <div class="flex items-start gap-3 text-sm">
+        <div class="w-3 h-3 rounded-full bg-violet-500 flex-shrink-0 mt-1"></div>
+        <span class="text-ads-muted leading-relaxed"><strong class="text-slate-800">マルチエージェント</strong> — 複雑なリサーチや分析で「並列探索」が効果的なタスク</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!--  SECTION 6: まとめ                                            -->
+<!-- ============================================================ -->
+<section>
+  <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-ads-accent/10 flex-shrink-0">
+      <i data-lucide="check-circle" class="w-5 h-5 text-ads-accent-light"></i>
+    </div>
+    <h2 class="text-xl md:text-2xl font-bold text-slate-900">まとめ — 3つの核心</h2>
+  </div>
+
+  <div class="space-y-4 mb-10">
+    <div class="bg-ads-surface border border-ads-border rounded-xl p-6 border-l-4 border-l-blue-500">
+      <div class="flex items-start gap-4">
+        <div class="text-2xl font-black text-blue-500 leading-none flex-shrink-0 mt-0.5">01</div>
+        <div>
+          <h3 class="font-bold text-slate-900 mb-2">コンテキストは「有限の資源」として扱う</h3>
+          <p class="text-sm text-ads-muted leading-relaxed">
+            AIのコンテキストウィンドウは無限ではなく、詰め込むほど精度が落ちる。目指すべきは「小さく、でも濃い」情報の束。不要な情報は積極的に削ぎ落とすことが、AIの性能を引き出す。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-ads-surface border border-ads-border rounded-xl p-6 border-l-4 border-l-emerald-500">
+      <div class="flex items-start gap-4">
+        <div class="text-2xl font-black text-emerald-500 leading-none flex-shrink-0 mt-0.5">02</div>
+        <div>
+          <h3 class="font-bold text-slate-900 mb-2">「指示の書き方」より「情報の選び方」</h3>
+          <p class="text-sm text-ads-muted leading-relaxed">
+            プロンプト（指示文）の言い回しを磨くより、AIに何を見せるかを設計する方が効果的。システムプロンプト・ツール・具体例のそれぞれを「最小限で十分な品質」に絞り込む。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-ads-surface border border-ads-border rounded-xl p-6 border-l-4 border-l-violet-500">
+      <div class="flex items-start gap-4">
+        <div class="text-2xl font-black text-violet-500 leading-none flex-shrink-0 mt-0.5">03</div>
+        <div>
+          <h3 class="font-bold text-slate-900 mb-2">長時間タスクには「分割・圧縮・分業」の技を使う</h3>
+          <p class="text-sm text-ads-muted leading-relaxed">
+            AIに長い仕事を任せるときは、コンパクション（要約してリスタート）・構造化メモ（外付け記憶）・マルチエージェント（分業）の3技術を組み合わせることで、コンテキストの壁を乗り越えられる。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center bg-gradient-to-b from-blue-600 to-violet-600 text-white rounded-2xl p-8 md:p-10">
+    <i data-lucide="brain" class="w-10 h-10 mx-auto mb-4 opacity-90"></i>
+    <p class="text-lg font-black mb-3">AIの性能は、モデルだけでなく「情報の渡し方」で決まる</p>
+    <p class="text-blue-100 max-w-lg mx-auto leading-relaxed text-sm">
+      コンテキストエンジニアリングは、AIエージェントを使いこなすうえでの根幹スキルです。「どの情報を、いつ、どれだけAIに渡すか」を考えるだけで、同じモデルでも得られる結果が大きく変わります。
+    </p>
+    <p class="mt-4 text-[11px] text-blue-200">出典: <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" class="underline decoration-blue-300/50 hover:text-white transition-colors">Effective Context Engineering for AI Agents — Anthropic Engineering Blog (2025)</a></p>
+  </div>
+</section>
+
+<!-- CONTENT_END -->
+  </main>
+  <footer class="max-w-3xl mx-auto px-5 pb-10 pt-6 border-t border-ads-border/30">
+    <p class="text-xs text-ads-dim text-center">AI-Driven School の図解ツールで作成</p>
+  </footer>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
