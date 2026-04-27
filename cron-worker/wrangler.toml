@@ -1,0 +1,30 @@
+name = "kintai-line-reminder"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# 既存の Pages Functions と同じ KV namespace を共有する
+# id は親プロジェクトの wrangler.toml と一致させること
+[[kv_namespaces]]
+binding = "KINTAI_DATA"
+id = "c83ff556009a48a0aa5d291100f2cab2"
+preview_id = "ca8e9297b16a41398e463043975fcb2d"
+
+# Cron Trigger（UTC 基準）
+# JST 09:00 = UTC 00:00
+# 月末最終日候補（29/30/31）は Worker 側で「実際の月末最終日かどうか」を判定し、
+# 該当しない日（例: 4月の31日）はスキップする。
+[triggers]
+crons = [
+  "0 0 25 * *",         # 毎月25日 09:00 JST   1回目リマインド
+  "0 0 28 * *",         # 毎月28日 09:00 JST   2回目リマインド（兼 2月最終日）
+  "0 0 29,30,31 * *",   # 月末最終日 09:00 JST 最終リマインド（実日のみ送信）
+]
+
+[vars]
+KINTAI_APP_URL = "https://kintai-app-dyu.pages.dev"
+
+# ── シークレット（wrangler secret put で設定） ──
+# LINE_CHANNEL_ACCESS_TOKEN: LINE Messaging API の長期アクセストークン
+#   wrangler secret put LINE_CHANNEL_ACCESS_TOKEN --config cron-worker/wrangler.toml
+# LINE_CHANNEL_SECRET: Webhook 署名検証用の Channel secret
+#   wrangler secret put LINE_CHANNEL_SECRET --config cron-worker/wrangler.toml
