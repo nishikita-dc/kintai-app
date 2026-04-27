@@ -4,6 +4,7 @@ import type { ConfirmData } from '../../types';
 import { buildMonthlyEmailHtml, buildMonthlyEmailSubject } from '../../lib/emailTemplate';
 import type { SentRecord } from '../../types';
 import { kvConfirmKey, kvConfirmMonthPrefix, kvSentKey } from '../../lib/kvKeys';
+import { normalizeKintaiCsv } from '../../lib/csvFormatter';
 import { getCorsHeaders, authenticate, jsonResponse as jsonRes, isValidEmpId, isValidYearMonth } from '../_shared/edgeHelpers';
 
 interface Env {
@@ -143,11 +144,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     );
   }
 
-  // CSV添付ファイルを構築（UTF-8 BOM付き）
+  // CSV添付ファイルを構築（BOM無し: King of Time が #コメント行を正しくスキップできるように）
   const attachments = confirmedEntries.map((entry) => {
-    const csvWithBom = '\uFEFF' + entry.csv;
+    const normalizedCsv = normalizeKintaiCsv(entry.csv);
     return {
-      content: toBase64(csvWithBom),
+      content: toBase64(normalizedCsv),
       filename: `${entry.year}${String(entry.month).padStart(2, '0')}_${entry.empId}_${entry.empName}.csv`,
       type: 'text/csv',
       disposition: 'attachment' as const,

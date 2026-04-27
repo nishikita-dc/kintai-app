@@ -3,6 +3,7 @@
 import type { ConfirmData } from '../../types';
 import { getCorsHeaders, jsonResponse, isValidEmpId } from '../_shared/edgeHelpers';
 import { kvConfirmKey } from '../../lib/kvKeys';
+import { normalizeKintaiCsv } from '../../lib/csvFormatter';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -62,10 +63,12 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
   const mm = String(data.month).padStart(2, '0');
   const filename = `${data.year}${mm}_${data.empId}_${data.empName}.csv`;
+  // 旧テンプレートで保存されたCSVも normalize で新テンプレートに揃う。
+  // 既存データのダウンロードをブロックしないため厳格な assert は行わない。
+  const normalizedCsv = normalizeKintaiCsv(data.csv);
 
-  // UTF-8 BOM 付きで返す（Excel で開いたとき文字化けしないように）
-  const csvWithBom = '\uFEFF' + data.csv;
-  const body = new TextEncoder().encode(csvWithBom);
+  // BOMは付けない。King of Time は先頭 # 行をコメントとしてスキップするが、BOMが先頭にあると1行目をデータ行として誤検知してエラーになる。
+  const body = new TextEncoder().encode(normalizedCsv);
 
   return new Response(body, {
     headers: {

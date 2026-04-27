@@ -2,6 +2,7 @@
 
 import type { ConfirmData } from '../../types';
 import { kvConfirmKey } from '../../lib/kvKeys';
+import { assertKintaiCsv, normalizeKintaiCsv } from '../../lib/csvFormatter';
 import { getCorsHeaders, authenticate, jsonResponse, isValidEmpId, isValidYearMonth } from '../_shared/edgeHelpers';
 
 interface Env {
@@ -81,6 +82,12 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (!isValidYearMonth(year as number, month as number)) {
       return jsonResponse({ error: 'year/month の値が不正です' }, cors, 400);
     }
+    const normalizedCsv = normalizeKintaiCsv(csv);
+    try {
+      assertKintaiCsv(normalizedCsv);
+    } catch {
+      return jsonResponse({ error: 'CSVフォーマットがテンプレート仕様と一致しません' }, cors, 400);
+    }
 
     // summary は省略可能。存在する場合だけ数値チェック
     type SummaryShape = ConfirmData['summary'];
@@ -111,7 +118,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       empName,
       year,
       month,
-      csv,
+      csv: normalizedCsv,
       confirmedAt,
       ...(validatedSummary !== undefined ? { summary: validatedSummary } : {}),
     };

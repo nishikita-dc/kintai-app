@@ -21,13 +21,116 @@ export interface CsvWorkRow {
   end: string;
 }
 
-/** 打刻CSVのコメントヘッダー（変更不要な固定文言） */
+/**
+ * Numbers テンプレート準拠のコメントヘッダー。
+ * `public/template_timerecord.csv` と完全一致させる（SSOT）。
+ */
 const CSV_HEADER_LINES = [
   '#従業員コード*,名前*(従業員コード、名前はどちらか必須),打刻種別コード*,打刻日時*',
   '#（注）*は必須項目です。最大登録数は1回あたり1000件です。,,,',
-  '#先頭が#から始まる行は読み込まれません。最終行は改行で終了して下さい。また、下記サンプル行は削除してご使用下さい。,,,',
-  '#「打刻種別コード」出勤1、退勤2,,,',
+  '#先頭が#から始まる行は読み込まれません。最終行は改行で終了して下さい。,,,',
 ] as const;
+
+/**
+ * 過去テンプレートに含まれていたが現在は使わないコメント行。
+ * 既存KVに保存済みのCSVに当行のみ含まれているケースがあるため、
+ * 正規化時に除去して新テンプレートに揃える。
+ */
+const LEGACY_HEADER_LINES: readonly string[] = [
+  '#「打刻種別コード」出勤1、退勤2,,,',
+];
+
+/**
+ * 旧テンプレートのコメント行を現テンプレート行に置き換えるマップ。
+ * 過去に保存されたCSVをダウンロード時に正規化するために使う。
+ */
+const LEGACY_HEADER_LINE_REPLACEMENTS: Record<string, string> = {
+  '#先頭が#から始まる行は読み込まれません。最終行は改行で終了して下さい。また、下記サンプル行は削除してご使用下さい。,,,':
+    '#先頭が#から始まる行は読み込まれません。最終行は改行で終了して下さい。,,,',
+};
+
+const CRLF = '\r\n';
+const HEADER = CSV_HEADER_LINES.join(CRLF) + CRLF;
+
+function escapeCsvField(value: string): string {
+  return /[,"\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+/**
+ * 改行コードと末尾改行を固定し、同一入力で同一バイト列になるよう正規化する。
+ * 過去テンプレートに由来する LEGACY_HEADER_LINES も合わせて除去するため、
+ * 旧データ・新データのどちらを通しても出力テンプレートは一致する。
+ */
+export function normalizeKintaiCsv(csv: string): string {
+  // 先頭BOM(U+FEFF)を除去。BOMが残ると King of Time が
+  // 先頭 # コメント行のスキップ判定に失敗する。
+  const withoutBom = csv.replace(/^﻿/, '');
+  const normalized = withoutBom.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalized.split('\n');
+
+  // 末尾の空行は 1 行だけにする（最後は必ず CRLF で終える）
+  while (lines.length > 0 && lines[lines.length - 1] === '') {
+    lines.pop();
+  }
+
+  // 旧テンプレート由来のコメント行を除去（データ行は # で始まらないので影響なし）
+  const cleaned = lines.filter((line) => !LEGACY_HEADER_LINES.includes(line));
+
+  // 旧コメント行を新テンプレートのコメント行に置き換える
+  const migrated = cleaned.map((line) => LEGACY_HEADER_LINE_REPLACEMENTS[line] ?? line);
+
+  return migrated.join(CRLF) + CRLF;
+}
+
+/**
+ * テンプレート準拠の勤怠CSVかを判定する。
+ * false の場合、reason に失敗理由を返す。
+ */
+export function validateKintaiCsv(csv: string): { ok: true } | { ok: false; reason: string } {
+  if (!csv.endsWith(CRLF)) {
+    return { ok: false, reason: 'CSVの最終行はCRLFで終了している必要があります。' };
+  }
+  if (csv.includes('\n') && csv.includes('\r\n') === false) {
+    return { ok: false, reason: '改行コードはCRLF固定です。' };
+  }
+
+  const rows = csv.split(CRLF);
+  // split の都合で最後に空文字が1行できる
+  if (rows[rows.length - 1] === '') rows.pop();
+
+  if (rows.length < CSV_HEADER_LINES.length) {
+    return { ok: false, reason: 'ヘッダー行が不足しています。' };
+  }
+
+  for (let i = 0; i < CSV_HEADER_LINES.length; i += 1) {
+    if (rows[i] !== CSV_HEADER_LINES[i]) {
+      return { ok: false, reason: `ヘッダー${i + 1}行目がテンプレートと一致しません。` };
+    }
+  }
+
+  const dataRows = rows.slice(CSV_HEADER_LINES.length);
+  const dataLinePattern = /^([^,\r\n]+|"(?:""|[^"])*"),([^,\r\n]+|"(?:""|[^"])*"),([12]),(\d{12})$/;
+  for (const line of dataRows) {
+    if (line.startsWith('#')) {
+      return { ok: false, reason: 'データ行にコメント行が含まれています。' };
+    }
+    if (!dataLinePattern.test(line)) {
+      return { ok: false, reason: `不正なデータ行です: ${line}` };
+    }
+  }
+
+  return { ok: true };
+}
+
+/**
+ * テンプレート準拠チェックに失敗した場合は例外を投げる。
+ */
+export function assertKintaiCsv(csv: string): void {
+  const result = validateKintaiCsv(csv);
+  if (result.ok === false) {
+    throw new Error(`勤怠CSVのテンプレート検証に失敗しました: ${result.reason}`);
+  }
+}
 
 /**
  * 出勤日リストから打刻CSVを生成する。
@@ -42,15 +145,8 @@ export function buildKintaiCsv(
   empName: string,
   rows: CsvWorkRow[],
 ): string {
-  const header = CSV_HEADER_LINES.join('\r\n') + '\r\n';
-
-  // CSV injection 防止: カンマ・改行・ダブルクォートを含む場合はクォート
-  const safeName = /[,"\r\n]/.test(empName)
-    ? `"${empName.replace(/"/g, '""')}"`
-    : empName;
-  const safeId = /[,"\r\n]/.test(empId)
-    ? `"${empId.replace(/"/g, '""')}"`
-    : empId;
+  const safeName = escapeCsvField(empName);
+  const safeId = escapeCsvField(empId);
 
   const dataLines = rows.flatMap(({ dateStr, start, end }) => [
     `${safeId},${safeName},1,${dateStr}${start}`,
@@ -58,7 +154,8 @@ export function buildKintaiCsv(
   ]);
 
   // データ行がない月（全休など）でもヘッダーだけ返す
-  if (dataLines.length === 0) return header;
-
-  return header + dataLines.join('\r\n') + '\r\n';
+  const csv = dataLines.length === 0 ? HEADER : HEADER + dataLines.join(CRLF) + CRLF;
+  const normalized = normalizeKintaiCsv(csv);
+  assertKintaiCsv(normalized);
+  return normalized;
 }

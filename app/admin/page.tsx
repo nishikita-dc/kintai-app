@@ -217,16 +217,6 @@ const MiniCalendar = memo(function MiniCalendar({ days }: { days: CalendarDay[] 
 
 // ── ドクターカード ────────────────────────────────────────────────────
 
-/** 確定日が月の前半（15日以前）かどうか */
-function isEarlyConfirm(confirmedAt: string, year: number, month: number): boolean {
-  const confirmed = new Date(confirmedAt);
-  const jstDay = new Date(confirmed.getTime() + 9 * 60 * 60 * 1000).getUTCDate();
-  const jstMonth = new Date(confirmed.getTime() + 9 * 60 * 60 * 1000).getUTCMonth() + 1;
-  const jstYear = new Date(confirmed.getTime() + 9 * 60 * 60 * 1000).getUTCFullYear();
-  // 対象月の15日以前に確定されているか
-  return jstYear === year && jstMonth === month && jstDay <= 15;
-}
-
 const DoctorCard = memo(function DoctorCard({
   entry, isOpen, onToggle, onCsvDownload, isDownloading,
 }: {
@@ -237,7 +227,8 @@ const DoctorCard = memo(function DoctorCard({
   isDownloading: boolean;
 }) {
   const { summary, kintai, sentAt } = entry;
-  const earlyConfirm = !sentAt && isEarlyConfirm(entry.confirmedAt, entry.year, entry.month);
+  // メール送信前は確定日に関わらず「変更の可能性あり」を表示する
+  const unsentWarning = !sentAt;
 
   const calendarDays = useMemo(
     () => (isOpen ? buildCalendar(entry) : []),
@@ -281,9 +272,9 @@ const DoctorCard = memo(function DoctorCard({
               ) : (
                 <span className="text-xs text-gray-400">確定: {formatDateTime(entry.confirmedAt)}</span>
               )}
-              {earlyConfirm && (
+              {unsentWarning && (
                 <span className="flex items-center gap-1 text-xs bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2 py-0.5">
-                  <span aria-hidden="true">⚠️</span> 月前半確定 — 変更の可能性あり
+                  <span aria-hidden="true">⚠️</span> 未送信のため変更の可能性あり
                 </span>
               )}
             </div>
