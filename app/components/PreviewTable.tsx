@@ -20,10 +20,6 @@ interface PreviewTableProps {
   isConfirmed?: boolean;
   confirmedAt?: string;
   onCancelConfirm?: () => void;
-  // 即時送信
-  onSendNow?: () => void;
-  isSending?: boolean;
-  sendResult?: { ok: boolean; message: string } | null;
 }
 
 /** 対象月の末日を返す（例: 2026年4月 → 30） */
@@ -56,9 +52,6 @@ export default function PreviewTable({
   isConfirmed = false,
   confirmedAt,
   onCancelConfirm,
-  onSendNow,
-  isSending = false,
-  sendResult,
 }: PreviewTableProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const cancelDialogRef = useFocusTrap(useCallback(() => setShowCancelDialog(false), []));
@@ -229,20 +222,6 @@ export default function PreviewTable({
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {/* 今すぐ送信ボタン */}
-                  {onSendNow && (
-                    <button
-                      onClick={onSendNow}
-                      disabled={isSending}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold border border-white/50 text-white bg-white/20 hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 transition"
-                    >
-                      {isSending ? (
-                        <><i className="fa-solid fa-spinner fa-spin" /> 送信中...</>
-                      ) : (
-                        <><i className="fa-solid fa-paper-plane" /> 今すぐ送信</>
-                      )}
-                    </button>
-                  )}
                   {onCancelConfirm && (
                     <button
                       onClick={() => setShowCancelDialog(true)}
@@ -253,14 +232,6 @@ export default function PreviewTable({
                     </button>
                   )}
                 </div>
-
-                {/* 送信結果 */}
-                {sendResult && (
-                  <div className={`mt-2 text-xs px-3 py-2 rounded-lg ${sendResult.ok ? 'bg-white/20 text-white' : 'bg-red-100 text-red-700'}`}>
-                    <i className={`fa-solid ${sendResult.ok ? 'fa-check-circle' : 'fa-circle-exclamation'} mr-1`} />
-                    {sendResult.message}
-                  </div>
-                )}
               </div>
             </div>
           ) : (
@@ -293,7 +264,7 @@ export default function PreviewTable({
               <div>
                 <p className="text-sm font-bold text-amber-800">{month}月{lastDayOfMonth(year, month)}日 20:00 に自動送信されます</p>
                 <p className="text-xs text-amber-700 mt-0.5">
-                  確定すると{ADMIN_NAME}へCSVが自動送信されます。確定後も「今すぐ送信」で即時送信もできます。
+                  確定すると{ADMIN_NAME}へCSVが自動送信されます。
                 </p>
               </div>
             </div>

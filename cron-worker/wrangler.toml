@@ -10,14 +10,15 @@ id = "c83ff556009a48a0aa5d291100f2cab2"
 preview_id = "ca8e9297b16a41398e463043975fcb2d"
 
 # Cron Trigger（UTC 基準）
-# JST 09:00 = UTC 00:00
-# 月末最終日候補（29/30/31）は Worker 側で「実際の月末最終日かどうか」を判定し、
-# 該当しない日（例: 4月の31日）はスキップする。
+# JST 09:00 = UTC 00:00 / JST 20:00 = UTC 11:00
+# 月末最終日候補（28/29/30/31）は Worker 側で「実際の月末最終日かどうか」を判定し、
+# 該当しない日（例: 4月の31日、3月の28日）はスキップする。
 [triggers]
 crons = [
-  "0 0 25 * *",         # 毎月25日 09:00 JST   1回目リマインド
-  "0 0 28 * *",         # 毎月28日 09:00 JST   2回目リマインド（兼 2月最終日）
-  "0 0 29,30,31 * *",   # 月末最終日 09:00 JST 最終リマインド（実日のみ送信）
+  "0 0 25 * *",            # 毎月25日 09:00 JST   1回目リマインド
+  "0 0 28 * *",            # 毎月28日 09:00 JST   2回目リマインド（兼 2月最終日）
+  "0 0 29,30,31 * *",      # 月末最終日 09:00 JST 最終リマインド（実日のみ送信）
+  "0 11 28,29,30,31 * *",  # 月末最終日 20:00 JST 期限超過の催促（実日のみ送信）
 ]
 
 [vars]
@@ -28,3 +29,6 @@ KINTAI_APP_URL = "https://kintai-app-dyu.pages.dev"
 #   wrangler secret put LINE_CHANNEL_ACCESS_TOKEN --config cron-worker/wrangler.toml
 # LINE_CHANNEL_SECRET: Webhook 署名検証用の Channel secret
 #   wrangler secret put LINE_CHANNEL_SECRET --config cron-worker/wrangler.toml
+# KINTAI_API_KEY: 月末20:00 に /api/send-monthly を叩くための X-API-Key
+#   親 Pages Functions の API_KEY と同じ値を設定する
+#   wrangler secret put KINTAI_API_KEY --config cron-worker/wrangler.toml

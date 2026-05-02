@@ -10,20 +10,23 @@ interface Env {
   LINE_CHANNEL_ACCESS_TOKEN: string;
   LINE_CHANNEL_SECRET: string;
   KINTAI_APP_URL: string;
+  // 月末メール一括送信用: KINTAI_APP_URL/api/send-monthly を叩く際の API キー
+  KINTAI_API_KEY: string;
 }
 
 // ── 共通ユーティリティ ─────────────────────────────────────────────
 
-/** 現在時刻を JST として { year, month, day, lastDayOfMonth } で返す */
-function nowJst(): { year: number; month: number; day: number; lastDayOfMonth: number } {
+/** 現在時刻を JST として { year, month, day, hour, lastDayOfMonth } で返す */
+function nowJst(): { year: number; month: number; day: number; hour: number; lastDayOfMonth: number } {
   const utcMs = Date.now();
   const jst = new Date(utcMs + 9 * 60 * 60 * 1000);
   const year = jst.getUTCFullYear();
   const month = jst.getUTCMonth() + 1;
   const day = jst.getUTCDate();
+  const hour = jst.getUTCHours();
   // 翌月1日の前日 = 今月末
   const last = new Date(Date.UTC(year, month, 0));
-  return { year, month, day, lastDayOfMonth: last.getUTCDate() };
+  return { year, month, day, hour, lastDayOfMonth: last.getUTCDate() };
 }
 
 /** KV のドクターリストを取得。未保存なら DOCTOR_LIST フォールバック。 */
@@ -62,24 +65,68 @@ async function listUnconfirmedDoctors(
 }
 
 /**
- * その日にリマインドを送るべきかを判定して variant を返す。
- * - 25日           → 'first'
- * - 月末最終日      → 'final'（28日が最終日となる2月非閏年も含む）
- * - 28日（最終日でない）→ 'middle'
+ * その日・その時刻にリマインドを送るべきかを判定して variant を返す。
+ * - 月末最終日 20時      → 'overdue'（期限超過の催促。最終日のみ送る）
+ * - 月末最終日 09時      → 'final' （28日が最終日となる2月非閏年も含む）
+ * - 25日 09時            → 'first'
+ * - 28日（最終日でない）09時 → 'middle'
  * - 上記以外（29/30/31 cron が最終日でない月に発火した場合など）→ null（スキップ）
  */
-function detectVariant(day: number, lastDayOfMonth: number): ReminderVariant | null {
-  if (day === lastDayOfMonth) return 'final';
+function detectVariant(day: number, hour: number, lastDayOfMonth: number): ReminderVariant | null {
+  if (day === lastDayOfMonth && hour === 20) return 'overdue';
+  if (day === lastDayOfMonth && hour === 9) return 'final';
+  if (hour !== 9) return null;
   if (day === 25) return 'first';
   if (day === 28) return 'middle';
   return null;
 }
 
+/**
+ * /api/send-monthly を叩いて、対象月の確定済みドクターのデータを
+ * 山本さん宛にメール一括送信する。月末最終日 20:00 JST にだけ呼ばれる。
+ */
+async function sendMonthlyEmailSummary(
+  env: Env,
+  year: number,
+  month: number,
+): Promise<{ ok: boolean; message: string }> {
+  if (!env.KINTAI_APP_URL) {
+    return { ok: false, message: 'KINTAI_APP_URL が未設定です。' };
+  }
+  if (!env.KINTAI_API_KEY) {
+    return { ok: false, message: 'KINTAI_API_KEY が未設定です。wrangler secret put で設定してください。' };
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${env.KINTAI_APP_URL}/api/send-monthly`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': env.KINTAI_API_KEY,
+      },
+      body: JSON.stringify({ year, month }),
+    });
+  } catch (err) {
+    return { ok: false, message: `メール送信通信エラー: ${String(err)}` };
+  }
+
+  let body: { message?: string; error?: string; sent?: number } = {};
+  try {
+    body = await res.json();
+  } catch { /* ignore */ }
+
+  if (!res.ok) {
+    return { ok: false, message: `メール送信失敗 status=${res.status} ${body.error ?? ''}` };
+  }
+  return { ok: true, message: `メール一括送信OK: ${body.message ?? `${body.sent ?? 0}名分`}` };
+}
+
 /** リマインド送信のコアロジック（Cron / 手動テスト共通） */
 async function runReminder(env: Env, opts: { forceVariant?: ReminderVariant } = {}): Promise<{ ok: boolean; message: string }> {
-  const { year, month, day, lastDayOfMonth } = nowJst();
+  const { year, month, day, hour, lastDayOfMonth } = nowJst();
 
-  const variant = opts.forceVariant ?? detectVariant(day, lastDayOfMonth);
+  const variant = opts.forceVariant ?? detectVariant(day, hour, lastDayOfMonth);
   if (!variant) {
     return { ok: true, message: `${year}-${month}-${day}: 対象日ではないためスキップ。` };
   }
@@ -121,9 +168,19 @@ async function runReminder(env: Env, opts: { forceVariant?: ReminderVariant } = 
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil((async () => {
-      const result = await runReminder(env);
-      if (result.ok) console.log(`[cron ${event.cron}] ${result.message}`);
-      else console.error(`[cron ${event.cron}] ${result.message}`);
+      const { year, month, day, hour, lastDayOfMonth } = nowJst();
+      const variant = detectVariant(day, hour, lastDayOfMonth);
+
+      const lineResult = await runReminder(env, variant ? { forceVariant: variant } : {});
+      if (lineResult.ok) console.log(`[cron ${event.cron}] LINE: ${lineResult.message}`);
+      else console.error(`[cron ${event.cron}] LINE: ${lineResult.message}`);
+
+      // 月末最終日 20:00 JST のみ追加で /api/send-monthly を叩いてメール一括送信
+      if (variant === 'overdue') {
+        const mailResult = await sendMonthlyEmailSummary(env, year, month);
+        if (mailResult.ok) console.log(`[cron ${event.cron}] Mail: ${mailResult.message}`);
+        else console.error(`[cron ${event.cron}] Mail: ${mailResult.message}`);
+      }
     })());
   },
 
@@ -136,18 +193,27 @@ export default {
       return new Response('kintai-line-reminder OK', { status: 200 });
     }
 
-    // 手動テスト発火: GET /run?secret=<LINE_CHANNEL_SECRET>[&variant=first|middle|final]
-    // variant 未指定時は今日の日付から自動判定（25/28/月末以外はスキップ）。
+    // 手動テスト発火: GET /run?secret=<LINE_CHANNEL_SECRET>[&variant=first|middle|final|overdue]
+    // variant 未指定時は今日の日付・時刻から自動判定（25/28/月末09時・月末20時以外はスキップ）。
     if (request.method === 'GET' && url.pathname === '/run') {
       const provided = url.searchParams.get('secret') ?? '';
       if (!env.LINE_CHANNEL_SECRET || provided !== env.LINE_CHANNEL_SECRET) {
         return new Response('Unauthorized', { status: 401 });
       }
       const v = url.searchParams.get('variant');
-      const forceVariant = v === 'first' || v === 'middle' || v === 'final' ? v : undefined;
-      const result = await runReminder(env, { forceVariant });
-      return new Response(JSON.stringify(result), {
-        status: result.ok ? 200 : 500,
+      const forceVariant = v === 'first' || v === 'middle' || v === 'final' || v === 'overdue' ? v : undefined;
+      const lineResult = await runReminder(env, { forceVariant });
+
+      // overdue cron 相当のときは /api/send-monthly も叩いてメール一括送信
+      const { year, month, day, hour, lastDayOfMonth } = nowJst();
+      const effectiveVariant = forceVariant ?? detectVariant(day, hour, lastDayOfMonth);
+      const mailResult = effectiveVariant === 'overdue'
+        ? await sendMonthlyEmailSummary(env, year, month)
+        : null;
+
+      const overallOk = lineResult.ok && (mailResult?.ok ?? true);
+      return new Response(JSON.stringify({ line: lineResult, mail: mailResult }), {
+        status: overallOk ? 200 : 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
