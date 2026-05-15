@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "deploy": "npm run build && wrangler pages deploy out --project-name kintai-app --commit-message \"deploy\"",
+    "check-env": "node -e \"const fs=require('fs');if(!fs.existsSync('.env.local')){console.error('❌ .env.local が見つかりません。ビルドを中止します。');process.exit(1)}const env=fs.readFileSync('.env.local','utf8');if(!env.includes('NEXT_PUBLIC_API_KEY=')){console.error('❌ NEXT_PUBLIC_API_KEY が .env.local に設定されていません。ビルドを中止します。');process.exit(1)}console.log('✅ .env.local の確認OK')\"",
+    "deploy": "npm run check-env && npm run build && wrangler pages deploy out --project-name kintai-app --branch=main --commit-dirty=true",
     "pages:dev": "wrangler pages dev out --port 3001",
     "deploy:cron": "wrangler deploy --config cron-worker/wrangler.toml",
     "dev:cron": "wrangler dev --config cron-worker/wrangler.toml --test-scheduled"
@@ -27,6 +28,6 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
-    "wrangler": "^4.81.0"
+    "wrangler": "^4.91.0"
   }
 }
