@@ -362,37 +362,6 @@ export default function Home() {
     }
   }, [empId, year, month, isCancelling]);
 
-  // ── 即時送信 ──────────────────────────────────────────────────────
-  const [isSending, setIsSending] = useState(false);
-  const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null);
-
-  const handleSendNow = useCallback(async () => {
-    setIsSending(true);
-    setSendResult(null);
-    try {
-      const res = await fetch('/api/send-monthly', {
-        method: 'POST',
-        headers: apiHeaders(),
-        body: JSON.stringify({ year, month, empId }),
-      });
-      const data = (await res.json()) as { ok?: boolean; message?: string; error?: string; sent?: number };
-      if (!res.ok) {
-        setSendResult({ ok: false, message: data.error ?? `送信に失敗しました (HTTP ${res.status})` });
-      } else {
-        setSendResult({ ok: true, message: data.message ?? `${data.sent ?? 0}名分を送信しました` });
-      }
-    } catch (err) {
-      setSendResult({ ok: false, message: '通信エラーが発生しました。ネットワークを確認してください。' });
-    } finally {
-      setIsSending(false);
-    }
-  }, [year, month, empId]);
-
-  // 月が変わったら送信結果をリセット
-  useEffect(() => {
-    setSendResult(null);
-  }, [year, month]);
-
   // ── ローディング・未選択ガード ────────────────────────────────────
   if (!isInitialized) {
     return (
@@ -643,9 +612,6 @@ export default function Home() {
             isConfirmed={isConfirmed}
             confirmedAt={confirmedAt ?? undefined}
             onCancelConfirm={handleCancelConfirm}
-            onSendNow={handleSendNow}
-            isSending={isSending}
-            sendResult={sendResult}
           />
         )}
       </main>

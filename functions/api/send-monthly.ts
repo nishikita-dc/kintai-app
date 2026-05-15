@@ -3,9 +3,9 @@
 import type { ConfirmData } from '../../types';
 import { buildMonthlyEmailHtml, buildMonthlyEmailSubject } from '../../lib/emailTemplate';
 import type { SentRecord } from '../../types';
-import { kvConfirmKey, kvConfirmMonthPrefix, kvSentKey } from '../../lib/kvKeys';
+import { kvConfirmMonthPrefix, kvSentKey } from '../../lib/kvKeys';
 import { normalizeKintaiCsv } from '../../lib/csvFormatter';
-import { getCorsHeaders, authenticate, jsonResponse as jsonRes, isValidEmpId, isValidYearMonth } from '../_shared/edgeHelpers';
+import { getCorsHeaders, authenticate, jsonResponse as jsonRes, isValidYearMonth } from '../_shared/edgeHelpers';
 
 interface Env {
   KINTAI_DATA: KVNamespace;
@@ -55,22 +55,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return jsonRes({ error: 'Method Not Allowed' }, cors, 405);
   }
 
-  // 対象年月・個別ドクターを取得
+  // 対象年月を取得
   let targetYear = 0;
   let targetMonth = 0;
-  let targetEmpId: string | null = null;
 
   try {
     const body = (await request.json()) as Record<string, unknown>;
     if (typeof body.year === 'number') targetYear = body.year;
     if (typeof body.month === 'number') targetMonth = body.month;
-    if (typeof body.empId === 'string') targetEmpId = body.empId;
   } catch {
     // bodyなしの場合はデフォルトを使用
-  }
-
-  if (targetEmpId && !isValidEmpId(targetEmpId)) {
-    return jsonRes({ error: 'empId の形式が不正です' }, cors, 400);
   }
 
   if (!targetYear || !targetMonth) {
@@ -84,41 +78,24 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return jsonRes({ error: 'year/month の値が不正です' }, cors, 400);
   }
 
-  // empId 指定時は個別ドクターのみ、未指定時は全員分
+  // 対象月の確定済みエントリをすべて取得して一括送信
   const confirmedEntries: ConfirmData[] = [];
+  const prefix = kvConfirmMonthPrefix(targetYear, targetMonth);
+  const list = await env.KINTAI_DATA.list({ prefix });
 
-  if (targetEmpId) {
-    // 個別送信: 指定ドクターの確定データのみ取得
-    const key = kvConfirmKey(targetEmpId, targetYear, targetMonth);
-    const raw = await env.KINTAI_DATA.get(key);
-    if (!raw) {
-      return jsonRes({ ok: false, error: `${targetYear}年${targetMonth}月分の確定データがありません`, sent: 0 }, cors, 400);
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      if (isValidConfirmData(parsed)) {
-        confirmedEntries.push(parsed);
-      }
-    } catch { /* invalid */ }
-  } else {
-    // 全員送信: 対象月の確定済みエントリをすべて取得
-    const prefix = kvConfirmMonthPrefix(targetYear, targetMonth);
-    const list = await env.KINTAI_DATA.list({ prefix });
+  if (list.keys.length === 0) {
+    return jsonRes({ ok: true, message: `${targetYear}年${targetMonth}月分の確定データはありません`, sent: 0 }, cors);
+  }
 
-    if (list.keys.length === 0) {
-      return jsonRes({ ok: true, message: `${targetYear}年${targetMonth}月分の確定データはありません`, sent: 0 }, cors);
-    }
-
-    for (const k of list.keys) {
-      const raw = await env.KINTAI_DATA.get(k.name);
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          if (isValidConfirmData(parsed)) {
-            confirmedEntries.push(parsed);
-          }
-        } catch { /* skip */ }
-      }
+  for (const k of list.keys) {
+    const raw = await env.KINTAI_DATA.get(k.name);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (isValidConfirmData(parsed)) {
+          confirmedEntries.push(parsed);
+        }
+      } catch { /* skip */ }
     }
   }
 

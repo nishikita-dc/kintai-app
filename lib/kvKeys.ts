@@ -6,10 +6,14 @@
  * confirmed:{YYYY-MM}:{empId}      確定データ
  * sent:{YYYY-MM}:{empId}           メール送信済み記録
  * config:{empId}                   ドクター個別設定
+ * line_group_id                    LINE グループ ID（cron-worker から書込）
  */
 
 /** ドクターリストのKVキー（管理画面から編集可能） */
 export const KV_DOCTOR_LIST_KEY = 'doctor_list';
+
+/** LINE グループ ID を保存する KV キー（Bot 招待後の最初の発言で自動保存） */
+export const KV_LINE_GROUP_ID_KEY = 'line_group_id';
 
 function pad(month: number | string): string {
   return String(Number(month)).padStart(2, '0');
